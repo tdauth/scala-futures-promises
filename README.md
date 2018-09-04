@@ -1,1 +1,19 @@
 # Scala Futures and Promises
+
+Advanced futures and promises API for Scala based on our paper [Advanced Futures and Promises in C++](http://www.home.hs-karlsruhe.de/~suma0002/publications/advanced-futures-promises-cpp.pdf).
+It provides an implementation based on the Scala Standard Library for futures and promises.
+The implementation with Scala should be much easier than with C++ since the garbage collection makes all shared pointers for callbacks unnecessary.
+Besides, better abstraction is possible since the futures and promises are heap-allocated in Scala.
+Therefore, the library can provide abstract classes or traits.
+
+## Automatic Build with TravisCI
+[![Build Status](https://travis-ci.org/tdauth/scala-futures-promises.svg?branch=master)](https://travis-ci.org/tdauth/scala-futures-promises)
+
+## Implementation based on Scala FP
+Scala provides a standard library for [futures and promises](http://docs.scala-lang.org/overviews/core/futures.html) which we will call Scala FP.
+The source code of Scala FP in Scala version 2.13.x can be found [here](https://github.com/scala/scala/tree/2.13.x/src/library/scala/concurrent).
+Futures in Scala FP can have multiple callbacks registered and have multi-read semantics.
+
+## Unit Tests
+The unit tests are realized with the help of [ScalaTest](http://www.scalatest.org/).
+See [Using ScalaTest with sbt](http://www.scalatest.org/user_guide/using_scalatest_with_sbt) for more information about how to use it with sbt.
