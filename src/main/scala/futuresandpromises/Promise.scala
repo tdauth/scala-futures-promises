@@ -6,17 +6,15 @@ trait Promise[T] {
   def future(): Future[T]
   def tryComplete(v: Try[T]): Boolean
 
-  // These two methods are required since Try is defined as trait:
-  def createTryFromValue(v: T): Try[T]
-  def createTryFromException(e: Exception): Try[T]
+  def factory : Factory
 
   // derived methods:
   def trySuccess(v: T): Boolean = {
-    this.tryComplete(createTryFromValue(v))
+    this.tryComplete(factory.createTryFromValue(v))
   }
 
   def tryFailure(e: Exception): Boolean = {
-    this.tryComplete(createTryFromException(e))
+    this.tryComplete(factory.createTryFromException(e))
   }
 
   def tryCompleteWith(f: Future[T]): Unit = {

@@ -5,6 +5,9 @@ It provides an implementation based on the Scala Standard Library for futures an
 The implementation with Scala should be much easier than with C++ since the garbage collection makes all shared pointers for callbacks unnecessary.
 Besides, better abstraction is possible since the futures and promises are heap-allocated in Scala.
 Therefore, the library can provide abstract classes or traits.
+This allows real abstraction for the derived methods which can already all be implemented in the traits.
+Only the core methods have to be implemented by a concrete implementation.
+The trait `Factory` has to be extended for creating instances of the concrete implementations.
 
 ## Automatic Build with TravisCI
 [![Build Status](https://travis-ci.org/tdauth/scala-futures-promises.svg?branch=master)](https://travis-ci.org/tdauth/scala-futures-promises)
@@ -12,6 +15,7 @@ Therefore, the library can provide abstract classes or traits.
 ## Implementation based on Scala FP
 Scala provides a standard library for [futures and promises](http://docs.scala-lang.org/overviews/core/futures.html) which we will call Scala FP.
 The source code of Scala FP in Scala version 2.13.x can be found [here](https://github.com/scala/scala/tree/2.13.x/src/library/scala/concurrent).
+The latest API documentation can be found [here](https://www.scala-lang.org/api/current/scala/concurrent/index.html).
 Futures in Scala FP can have multiple callbacks registered and have multi-read semantics.
 
 ## Unit Tests

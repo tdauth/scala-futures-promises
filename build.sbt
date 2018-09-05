@@ -4,9 +4,7 @@ version := "1.0"
 
 organization := "tdauth"
 
-scalaVersion := "2.12.3"
-
-sbtVersion := "0.13"
+scalaVersion := "2.12.6"
 
 libraryDependencies += "org.scalactic" %% "scalactic" % "3.0.5"
 

@@ -7,8 +7,7 @@ trait Future[T] {
   def isReady: Boolean
   def then[S](f: (Try[T]) => S): Future[S]
 
-  // This method is required since Promise is defined as trait:
-  def createPromise: Promise[T]
+  def factory: Factory
 
   // Derived methods:
   def onComplete(f: (Try[T]) => Unit): Unit = {
@@ -42,7 +41,7 @@ trait Future[T] {
   }
 
   def first(other: Future[T]): Future[T] = {
-    val p = createPromise
+    val p = factory.createPromise[T]
 
     this.onComplete((t: Try[T]) => {
       p.tryComplete(t)
@@ -56,7 +55,7 @@ trait Future[T] {
   }
 
   def firstSucc(other: Future[T]): Future[T] = {
-    val p = createPromise
+    val p = factory.createPromise[T]
 
     this.onComplete((t: Try[T]) => {
       p.trySuccess(t.get())
