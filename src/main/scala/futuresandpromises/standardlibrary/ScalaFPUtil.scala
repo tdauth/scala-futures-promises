@@ -18,7 +18,7 @@ class ScalaFPUtil extends Util {
 object ScalaFPUtil {
   private val util : ScalaFPUtil = new ScalaFPUtil
 
-  override def async[T](ex: Executor, f: () => T): Future[T] = {
+  def async[T](ex: Executor, f: () => T): Future[T] = {
     util.async[T](ex, f)
   }
 

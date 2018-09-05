@@ -1,6 +1,6 @@
 package main.scala.futuresandpromises
 
-class Factory {
+trait Factory {
 
   // This method is required since Promise is defined as trait:
   def createPromise[T]: Promise[T]
