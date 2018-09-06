@@ -30,7 +30,6 @@ class ScalaFPFuture[T](f: scala.concurrent.Future[T]) extends Future[T] {
     }
     val ex = new ScalaFPExecutor
     val executionContext = ex.executionContext
-    // TODO Does not find the variant of transform which takes Try and returns Try.
     val resultFuture: scala.concurrent.Future[S] = f.transform(transformCallback)(executionContext)
 
     new ScalaFPFuture[S](resultFuture)

@@ -13,7 +13,7 @@ trait Promise[T] {
     this.tryComplete(factory.createTryFromValue(v))
   }
 
-  def tryFailure(e: Exception): Boolean = {
+  def tryFailure(e: Throwable): Boolean = {
     this.tryComplete(factory.createTryFromException(e))
   }
 
