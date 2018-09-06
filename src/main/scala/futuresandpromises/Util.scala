@@ -1,6 +1,7 @@
 package main.scala.futuresandpromises
 
 import scala.collection.immutable.Vector
+import java.util.concurrent.locks.ReentrantLock
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicBoolean
 import scala.util.control.NonFatal
@@ -10,11 +11,12 @@ trait Util {
   def factory: Factory
 
   // Derived methods:
-  type FirstNResultType[T] = Vector[Tuple2[Integer, Try[T]]]
+  type FirstNResultType[T] = Vector[Tuple2[Int, Try[T]]]
 
   def firstN[T](c: Vector[Future[T]], n: Integer): Future[FirstNResultType[T]] = {
     final class FirstNContext {
-      // TODO Use pre allocated space of n and protect it for atomic operations only.
+      // TODO Use pre allocated space of n and a more efficient way than locking.
+      var l = new ReentrantLock()
       var v: FirstNResultType[T] = Vector()
       val completed = new AtomicInteger(0)
       val done = new AtomicBoolean(false)
@@ -26,16 +28,18 @@ trait Util {
     if (c.size < n) {
       ctx.p.tryFailure(new RuntimeException("Not enough futures"))
     } else {
-      var i = new Integer(0)
-
-      for (f <- c) {
+      for ((f, i) <- c.view.zipWithIndex) {
         f.onComplete((t: Try[T]) => {
           if (!ctx.done.get) {
             val c = ctx.completed.incrementAndGet
 
             if (c <= n) {
-              // TODO make sure this operation is executed atomically
-              ctx.v = ctx.v :+ (i, t)
+              ctx.l.lock()
+              try {
+                ctx.v = ctx.v :+ (i, t)
+              } finally {
+                ctx.l.unlock()
+              }
 
               if (c == n) {
                 ctx.p.trySuccess(ctx.v)
@@ -44,19 +48,18 @@ trait Util {
             }
           }
         })
-
-        i += 1
       }
     }
 
     ctx.p.future
   }
 
-  type FirstNSuccResultType[T] = Vector[Tuple2[Integer, T]]
+  type FirstNSuccResultType[T] = Vector[Tuple2[Int, T]]
 
   def firstNSucc[T](c: Vector[Future[T]], n: Integer): Future[FirstNSuccResultType[T]] = {
     final class FirstNSuccContext {
-      // TODO Use pre allocated space of n and protect it for atomic operations only.
+      // TODO Use pre allocated space of n and a more efficient way than locking.
+      var l = new ReentrantLock()
       var v: FirstNSuccResultType[T] = Vector()
       val succeeded = new AtomicInteger(0)
       val failed = new AtomicInteger(0)
@@ -70,9 +73,7 @@ trait Util {
     if (total < n) {
       ctx.p.tryFailure(new RuntimeException("Not enough futures"))
     } else {
-      var i = new Integer(0)
-
-      for (f <- c) {
+      for ((f, i) <- c.view.zipWithIndex) {
         f.onComplete((t: Try[T]) => {
           if (!ctx.done.get) {
             // ignore exceptions until as many futures failed that n futures cannot be completed successfully anymore
@@ -96,8 +97,12 @@ trait Util {
               val c = ctx.succeeded.incrementAndGet
 
               if (c <= n) {
-                // TODO make sure this operation is executed atomically
-                ctx.v = ctx.v :+ (i, t.get)
+                ctx.l.lock()
+                try {
+                  ctx.v = ctx.v :+ (i, t.get)
+                } finally {
+                  ctx.l.unlock()
+                }
 
                 if (c == n) {
                   ctx.p.trySuccess(ctx.v)
@@ -107,8 +112,6 @@ trait Util {
             }
           }
         })
-
-        i += 1
       }
     }
 

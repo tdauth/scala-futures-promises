@@ -13,3 +13,9 @@ libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.5" % "test"
 logBuffered in Test := false
 
 coverageEnabled := true
+
+coverageMinimum := 100
+
+coverageFailOnMinimum := false
+
+coverageHighlighting := true

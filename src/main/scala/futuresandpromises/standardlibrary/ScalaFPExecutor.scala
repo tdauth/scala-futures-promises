@@ -4,8 +4,11 @@ import main.scala.futuresandpromises.Executor
 import java.util.concurrent.Executors
 import scala.concurrent.ExecutionContext
 
-class ScalaFPExecutor extends Executor {
-  val executionContext = ExecutionContext.global
+class ScalaFPExecutor(val executionContext: ExecutionContext) extends Executor {
+
+  def this() {
+    this(ExecutionContext.global)
+  }
 
   override def submit(f: () => Unit) = {
     executionContext.execute(new Runnable() {
