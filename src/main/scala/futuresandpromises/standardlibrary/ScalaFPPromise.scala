@@ -14,7 +14,7 @@ class ScalaFPPromise[T]() extends Promise[T] {
     val o = v.asInstanceOf[ScalaFPTry[T]].o
     o match {
       case Some(t) => p.tryComplete(t)
-      case None => throw new UsingUninitializedTry
+      case None => p.tryFailure(new UsingUninitializedTry)
     }
   }
 

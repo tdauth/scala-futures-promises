@@ -21,7 +21,7 @@ class UtilTest extends FlatSpec with Matchers {
         if (n % 2 == 0) {
           n
         } else {
-          throw new Exception("test")
+          throw new RuntimeException("test")
         }
       })
     })
@@ -57,7 +57,7 @@ class UtilTest extends FlatSpec with Matchers {
         if (n % 2 == 0) {
           n
         } else {
-          throw new Exception("test")
+          throw new RuntimeException("test")
         }
       })
     })
@@ -77,5 +77,18 @@ class UtilTest extends FlatSpec with Matchers {
     val t3 = result(2)
     t3._1 should be(4)
     t3._2 should be(4)
+  }
+
+  "All futures" should "fail" in {
+    val executor = new ScalaFPExecutor(ExecutionContext.fromExecutor(Executors.newSingleThreadExecutor()))
+    val futures = Vector.tabulate(10)(n => {
+      ScalaFPUtil.async[Int](executor, () => {
+        throw new RuntimeException("test " + n)
+      })
+    })
+
+    val result = ScalaFPUtil.firstNSucc(futures, 3)
+
+    the[RuntimeException] thrownBy result.get should have message "test 7"
   }
 }

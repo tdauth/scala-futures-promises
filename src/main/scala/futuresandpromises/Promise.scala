@@ -1,12 +1,10 @@
 package main.scala.futuresandpromises
 
 trait Promise[T] {
-  // TODO define basic constructor
-  //abstract def this()
   def future(): Future[T]
   def tryComplete(v: Try[T]): Boolean
 
-  def factory : Factory
+  def factory: Factory
 
   // derived methods:
   def trySuccess(v: T): Boolean = {

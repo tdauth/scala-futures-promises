@@ -35,7 +35,7 @@ trait Future[T] {
           case NonFatal(x) => t.get // will rethrow if failed
         }
       } else {
-        t.get // will rethrow if failed
+        t.get
       }
     }: T)
   }
