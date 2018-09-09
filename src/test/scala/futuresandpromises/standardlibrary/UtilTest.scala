@@ -13,10 +13,10 @@ class UtilTest extends UnitSpec {
   }
 
   it should "return three futures" in {
-    val executor = new ScalaFPExecutor(ExecutionContext.fromExecutor(Executors.newSingleThreadExecutor()))
-    val futures = Vector.tabulate(10)(n => {
+    val executor = new ScalaFPExecutor
+    val futures = Vector.tabulate(5)(n => {
       ScalaFPUtil.async(executor, () => {
-        Thread.sleep(n * 100)
+        Thread.sleep(n * 3000)
 
         if (n % 2 == 0) {
           n
@@ -50,9 +50,9 @@ class UtilTest extends UnitSpec {
 
   it should "return three successful futures" in {
     val executor = new ScalaFPExecutor(ExecutionContext.fromExecutor(Executors.newSingleThreadExecutor()))
-    val futures = Vector.tabulate(10)(n => {
+    val futures = Vector.tabulate(5)(n => {
       ScalaFPUtil.async(executor, () => {
-        Thread.sleep(n * 100)
+        Thread.sleep(n * 3000)
 
         if (n % 2 == 0) {
           n
@@ -80,15 +80,16 @@ class UtilTest extends UnitSpec {
   }
 
   it should "fail with one of the futures" in {
-    val executor = new ScalaFPExecutor(ExecutionContext.fromExecutor(Executors.newSingleThreadExecutor()))
-    val futures = Vector.tabulate(10)(n => {
+    val executor = new ScalaFPExecutor
+    val futures = Vector.tabulate(5)(n => {
       ScalaFPUtil.async[Int](executor, () => {
+        Thread.sleep(n * 3000)
         throw new RuntimeException("test " + n)
       })
     })
 
     val result = ScalaFPUtil.firstNSucc(futures, 3)
 
-    the[RuntimeException] thrownBy result.get should have message "test 7"
+    the[RuntimeException] thrownBy result.get should have message "test 2"
   }
 }

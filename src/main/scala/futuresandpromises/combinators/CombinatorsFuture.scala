@@ -1,6 +1,7 @@
 package tdauth.futuresandpromises.combinators
 
 import tdauth.futuresandpromises.Future
+import tdauth.futuresandpromises.Try
 import tdauth.futuresandpromises.standardlibrary.ScalaFPFuture
 
 class CombinatorsFuture[T](f: scala.concurrent.Future[T]) extends ScalaFPFuture[T](f) {
@@ -8,14 +9,27 @@ class CombinatorsFuture[T](f: scala.concurrent.Future[T]) extends ScalaFPFuture[
    * Uses the combinator {@link #orElse} instead of a promise-based implementation.
    */
   def firstSuccWithOrElse(other: Future[T]): Future[T] = {
-    val f0 = this.orElse(other)
-    val f1 = other.orElse(this)
+    val f0 = this.orElse(other).then((t: Try[T]) => {
+      /*
+       * Make sure that it fails with the second exception if it failed to prevent using the first exception since we want to use the final exception.
+       */
+      if (t.hasException) {
+        other.get // rethrows the exception of other
+      }
 
-    /*
-     * If f0 fails it waits for f1 and if f1 fails, f0 will fail with the exception of this and f1 will fail with the exception of other.
-     * Probably, f0 will win (since it is the first parameter and therefore when both fail, it will always fail with the exception of f0.
-     * However, our current firstSucc implementation would wait forever.
-     */
+      t.get
+    })
+    val f1 = other.orElse(this).then((t: Try[T]) => {
+      /*
+       * Make sure that it fails with the second exception if it failed to prevent using the first exception since we want to use the final exception.
+       */
+      if (t.hasException) {
+        this.get // rethrows the exception of this
+      }
+
+      t.get
+    })
+
     f0.first(f1)
   }
 

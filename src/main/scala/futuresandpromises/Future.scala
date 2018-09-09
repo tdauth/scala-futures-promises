@@ -1,5 +1,7 @@
 package tdauth.futuresandpromises
 
+import java.util.concurrent.atomic.AtomicBoolean
+
 import scala.util.control.NonFatal
 
 /**
@@ -83,20 +85,41 @@ trait Future[T] {
 
   /**
    * Completes the returned future with the first successfully completed future of the two passed futures this and other.
+   * If both futures fail, it fails with the final failing future to prevent any starvation of the program.
+   * In the C++ implementation we did rely on the assumption that the promise will be deleted and the resulting future would fail with {@link BrokenPromise}.
+   * However, we cannot make such an assumption in this implementation. since Scala has a garbage collection.
    *
-   *
-   * @note In the current implementation, the future will never be completed if both futures fail.
    * @see {@link combinators.CombinatorsFuture#firstSuccWithOrElse} for a different implementation based on {@link #orElse}.
    */
   def firstSucc(other: Future[T]): Future[T] = {
     val p = factory.createPromise[T]
+    /*
+     * This context is required to store if both futures have failed to prevent starvation.
+     */
+    val ctx = (new AtomicBoolean(false), new AtomicBoolean(false))
 
     this.onComplete((t: Try[T]) => {
-      p.trySuccess(t.get())
+      if (t.hasException) {
+        ctx._1.set(true)
+
+        if (ctx._2.get) {
+          p.tryComplete(t)
+        }
+      } else {
+        p.trySuccess(t.get())
+      }
     })
 
     other.onComplete((t: Try[T]) => {
-      p.trySuccess(t.get())
+      if (t.hasException) {
+        ctx._2.set(true)
+
+        if (ctx._1.get) {
+          p.tryComplete(t)
+        }
+      } else {
+        p.trySuccess(t.get())
+      }
     })
 
     p.future

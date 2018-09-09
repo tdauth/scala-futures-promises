@@ -9,6 +9,10 @@ This allows real abstraction for the derived methods which can already all be im
 Only the core methods have to be implemented by a concrete implementation.
 The trait `Factory` has to be extended for creating instances of the concrete implementations.
 
+
+The derived method `firstSucc` actually completes the final future with the final thrown exception if both futures fail since we cannot rely on broken promises in Scala because of the garbage collection.
+For the same reason the exception type `BrokenPromise` is never used in Scala.
+
 ## Automatic Build with TravisCI
 [![Build Status](https://travis-ci.org/tdauth/scala-futures-promises.svg?branch=master)](https://travis-ci.org/tdauth/scala-futures-promises)
 
@@ -46,10 +50,7 @@ It uses the plugin [sbt-scoverage](https://github.com/scoverage/sbt-scoverage).
 The command `sbt clean coverage test coverageReport` generates coverage reports into the directory `target/scala-<scala-version>/scoverage-report`.
 
 ## API Documentation
-The API documentation can be generated with [scaladoc](https://docs.scala-lang.org/style/scaladoc.html) with the following command:
-```
-sbt doc
-```
+The API documentation can be generated with [scaladoc](https://docs.scala-lang.org/style/scaladoc.html) with the following command: `sbt doc`
 It will be generated into the directory `target/scala-<scala-version>/api/`.
 
 ## Eclipse Support
