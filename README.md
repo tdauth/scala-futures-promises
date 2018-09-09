@@ -22,13 +22,13 @@ The latest API documentation can be found [here](https://www.scala-lang.org/api/
 Futures in Scala FP can have multiple callbacks registered and have multi-read semantics.
 
 ### Usage
-This basic example shows how create a future with the Scala FP implementation:
+This basic example shows how to create futures with the Scala FP implementation:
 ```
 val executor = new ScalaFPExecutor
 val f0 = ScalaFPUtil.async(executor, () => 10).guard(v => v == 10).then((t : Try[Int]) => t.get() * 10)
 val f1 = ScalaFPUtil.async(executor, () => 11)
 val f2 = f0.first(f1)
-println(f1.get())
+f2.onComplete((t: Try[Int]) => println(t.get()))
 ```
 
 ## Combinators
@@ -44,6 +44,13 @@ Use the command `sbt test` to run all unit tests.
 The project uses [scoverage](http://scoverage.org/) to generate coverage reports.
 It uses the plugin [sbt-scoverage](https://github.com/scoverage/sbt-scoverage).
 The command `sbt clean coverage test coverageReport` generates coverage reports into the directory `target/scala-<scala-version>/scoverage-report`.
+
+## API Documentation
+The API documentation can be generated with [scaladoc](https://docs.scala-lang.org/style/scaladoc.html) with the following command:
+```
+sbt doc
+```
+It will be generated into the directory `target/scala-<scala-version>/api/`.
 
 ## Eclipse Support
 Use the commnad `sbt eclipse` to generate an Eclipse project.

@@ -24,7 +24,6 @@ object ScalaFPUtil {
     util.async[T](ex, f)
   }
 
-  // Derived methods:
   def firstN[T](c: Vector[Future[T]], n: Integer): Future[Util#FirstNResultType[T]] = {
     util.firstN[T](c, n)
   }

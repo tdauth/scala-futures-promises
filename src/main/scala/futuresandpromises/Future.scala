@@ -26,7 +26,7 @@ trait Future[T] {
   /**
    * Allows to filter a future matching a user-defined condition.
    *
-   * Registers the callback predicate @p f to the future which gets the successful result value of the future and returns a boolean value.
+   * Registers the callback predicate f to the future which gets the successful result value of the future and returns a boolean value.
    * If the callback returns true, the future is completed with its successful result value.
    * If the callback returns false, the future is completed with an exception of the type {@link PredicateNotFulfilled}.
    * If the future has failed when the callback predicate should be called, it fails with its original exception.
@@ -82,7 +82,7 @@ trait Future[T] {
   }
 
   /**
-   * Completes the returned future with the first successfully completed future of the two passed futures this and @p other.
+   * Completes the returned future with the first successfully completed future of the two passed futures this and other.
    *
    *
    * @note In the current implementation, the future will never be completed if both futures fail.

@@ -4,6 +4,9 @@ import tdauth.futuresandpromises.Future
 import tdauth.futuresandpromises.standardlibrary.ScalaFPFuture
 
 class CombinatorsFuture[T](f: scala.concurrent.Future[T]) extends ScalaFPFuture[T](f) {
+  /**
+   * Uses the combinator {@link #orElse} instead of a promise-based implementation.
+   */
   def firstSuccWithOrElse(other: Future[T]): Future[T] = {
     val f0 = this.orElse(other)
     val f1 = other.orElse(this)

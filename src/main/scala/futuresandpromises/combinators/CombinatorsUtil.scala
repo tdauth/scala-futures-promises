@@ -23,14 +23,17 @@ class CombinatorsUtil extends ScalaFPUtil {
    * <pre>
    * ((f0.first(f1)).first(f2)) ... first(n)
    * </pre>
-   * This is done @p n times. Each time the successful future is removed from the input vector, so only the left futures can be added.
-   * Therefore, the original indices have to be stored in a map.
+   * This is done n times. Each time the successful future is removed from the input vector, so only the left futures can be added.
+   * Therefore, the original indices have to be stored in a map and reproduced whenever a Try value is added to the resulting vector.
    *
-   * Except for the error checking in the beginning, this implementation does not require the use of promises.
+   * Except for the error checking in the beginning, this implementation does not require the use of promises, unline {@link Util#firstN}.
    */
-  override def firstN[T](c: Vector[Future[T]], n: Integer): Future[FirstNResultType[T]] = firstNInternal[T](c, n, Vector(), (0 to c.size).map { i => (i, i) }.toMap)
+  def firstNWithFirst[T](c: Vector[Future[T]], n: Integer): Future[FirstNResultType[T]] = firstNWithFirstInternal[T](c, n, Vector(), (0 to c.size).map { i => (i, i) }.toMap)
 
-  private def firstNInternal[T](c: Vector[Future[T]], n: Integer, resultVector: FirstNResultType[T], indexMap: Map[Int, Int]): Future[FirstNResultType[T]] = {
+  /**
+   * @param indexMap Stores the current indices as keys and the original indices as values. This map is required for accessing the original index of a future when its Try instance is added to the result.
+   */
+  private def firstNWithFirstInternal[T](c: Vector[Future[T]], n: Integer, resultVector: FirstNResultType[T], indexMap: Map[Int, Int]): Future[FirstNResultType[T]] = {
     if (c.size < n) {
       val p = new ScalaFPPromise[FirstNResultType[T]]()
       p.tryFailure(new RuntimeException("Not enough futures"))
@@ -51,6 +54,11 @@ class CombinatorsUtil extends ScalaFPUtil {
       if (n > 1) {
         // Remove the element with the given index, so it cannot be added to the completed futures anymore.
         val newC = c.patch(index, Nil, 1)
+        /*
+         * Remove the current index from the indexMap since the element cannot be used for the result anymore.
+         * All current indices which are bigger than the removed index must by decreased to stay valid.
+         * Indices which are smaller than the removed index can stay as they are.
+         */
         val newIndexMap = (indexMap - index).map {
           case (key, value) => {
             if (key > index) {
@@ -63,7 +71,7 @@ class CombinatorsUtil extends ScalaFPUtil {
         /*
          * Call this method recursively to add the remaining n futures.
          */
-        firstNInternal[T](newC, n - 1, newResultVector, newIndexMap).get
+        firstNWithFirstInternal[T](newC, n - 1, newResultVector, newIndexMap).get
       } else {
         newResultVector
       }
@@ -80,9 +88,12 @@ object CombinatorsUtil {
     util.async[T](ex, f)
   }
 
-  // Derived methods:
   def firstN[T](c: Vector[Future[T]], n: Integer): Future[ScalaFPUtil#FirstNResultType[T]] = {
     util.firstN[T](c, n)
+  }
+
+  def firstNWithFirst[T](c: Vector[Future[T]], n: Integer): Future[ScalaFPUtil#FirstNResultType[T]] = {
+    util.firstNWithFirst[T](c, n)
   }
 
   def firstNSucc[T](c: Vector[Future[T]], n: Integer): Future[ScalaFPUtil#FirstNSuccResultType[T]] = {
