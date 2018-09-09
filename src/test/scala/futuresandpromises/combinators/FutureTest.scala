@@ -29,4 +29,13 @@ class FutureTest extends UnitSpec {
 
     the[RuntimeException] thrownBy f.get should have message "test 1"
   }
+
+  it should "complete with the exception of the first future with the help of firstSuccWithOrElse" in {
+    val executor = new ScalaFPExecutor
+    val f0 = CombinatorsUtil.async[Int](executor, () => { Thread.sleep(1000); throw new RuntimeException("test 0") })
+    val f1 = CombinatorsUtil.async[Int](executor, () => throw new RuntimeException("test 1"))
+    val f = f0.asInstanceOf[CombinatorsFuture[Int]].firstSuccWithOrElse(f1)
+
+    the[RuntimeException] thrownBy f.get should have message "test 0"
+  }
 }

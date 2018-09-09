@@ -13,7 +13,7 @@ class UtilTest extends UnitSpec {
     val executor = new ScalaFPExecutor
     val futures = Vector.tabulate(5)(n => {
       CombinatorsUtil.async(executor, () => {
-        Thread.sleep(n * 3000)
+        Thread.sleep(n * 5000)
 
         if (n % 2 == 0) {
           n

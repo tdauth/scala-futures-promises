@@ -7,30 +7,45 @@ import tdauth.futuresandpromises.standardlibrary.ScalaFPFuture
 class CombinatorsFuture[T](f: scala.concurrent.Future[T]) extends ScalaFPFuture[T](f) {
   /**
    * Uses the combinator {@link #orElse} instead of a promise-based implementation.
+   *
+   * To rethrow the correct exception we need to know the failing order of the futures because the final future should fail with the final failed future if both futures fail.
+   * @todo Simplify the implementation of throwing the final exception if possible.
    */
   def firstSuccWithOrElse(other: Future[T]): Future[T] = {
-    val f0 = this.orElse(other).then((t: Try[T]) => {
-      /*
-       * Make sure that it fails with the second exception if it failed to prevent using the first exception since we want to use the final exception.
-       */
+    /*
+     * Stores the order of the failed exceptions for resolving it in case both futures fail.
+     */
+    val ctx = scala.collection.mutable.ArrayBuffer.empty[Int]
+    val f0 = this.then((t: Try[T]) => {
       if (t.hasException) {
-        other.get // rethrows the exception of other
+        ctx.synchronized {
+          ctx += 0
+        }
+      }
+
+      t.get()
+    }).orElse(other)
+    val f1 = other.then((t: Try[T]) => {
+      if (t.hasException) {
+        ctx.synchronized {
+          ctx += 1
+        }
+      }
+
+      t.get()
+    }).orElse(this)
+
+    f0.first(f1).then((t: Try[T]) => {
+      if (t.hasException) {
+        if (ctx(0) == 0) {
+          other.get
+        } else {
+          this.get
+        }
       }
 
       t.get
     })
-    val f1 = other.orElse(this).then((t: Try[T]) => {
-      /*
-       * Make sure that it fails with the second exception if it failed to prevent using the first exception since we want to use the final exception.
-       */
-      if (t.hasException) {
-        this.get // rethrows the exception of this
-      }
-
-      t.get
-    })
-
-    f0.first(f1)
   }
 
   /**

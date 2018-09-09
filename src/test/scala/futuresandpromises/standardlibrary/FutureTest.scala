@@ -65,7 +65,6 @@ class FutureTest extends UnitSpec {
     val f0 = ScalaFPUtil.async(executor, () => 10)
     val f1 = ScalaFPUtil.async(executor, () => { Thread.sleep(1000); 11 })
     val f = f0.first(f1)
-    // TODO this is sometimes 11
     f.get should be(10)
   }
 
@@ -108,5 +107,14 @@ class FutureTest extends UnitSpec {
     val f = f0.firstSucc(f1)
 
     the[RuntimeException] thrownBy f.get should have message "test 1"
+  }
+
+  it should "complete with the exception of the first future with the help of firstSucc" in {
+    val executor = new ScalaFPExecutor
+    val f0 = ScalaFPUtil.async[Int](executor, () => { Thread.sleep(1000); throw new RuntimeException("test 0") })
+    val f1 = ScalaFPUtil.async[Int](executor, () => throw new RuntimeException("test 1"))
+    val f = f0.firstSucc(f1)
+
+    the[RuntimeException] thrownBy f.get should have message "test 0"
   }
 }

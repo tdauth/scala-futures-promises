@@ -16,7 +16,7 @@ class UtilTest extends UnitSpec {
     val executor = new ScalaFPExecutor
     val futures = Vector.tabulate(5)(n => {
       ScalaFPUtil.async(executor, () => {
-        Thread.sleep(n * 3000)
+        Thread.sleep(n * 5000)
 
         if (n % 2 == 0) {
           n
@@ -52,7 +52,7 @@ class UtilTest extends UnitSpec {
     val executor = new ScalaFPExecutor(ExecutionContext.fromExecutor(Executors.newSingleThreadExecutor()))
     val futures = Vector.tabulate(5)(n => {
       ScalaFPUtil.async(executor, () => {
-        Thread.sleep(n * 3000)
+        Thread.sleep(n * 5000)
 
         if (n % 2 == 0) {
           n
@@ -83,7 +83,7 @@ class UtilTest extends UnitSpec {
     val executor = new ScalaFPExecutor
     val futures = Vector.tabulate(5)(n => {
       ScalaFPUtil.async[Int](executor, () => {
-        Thread.sleep(n * 3000)
+        Thread.sleep(n * 5000)
         throw new RuntimeException("test " + n)
       })
     })
