@@ -2,7 +2,6 @@ package tdauth.futuresandpromises
 
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.locks.ReentrantLock
 
 import scala.collection.immutable.Vector
 import scala.util.control.NonFatal
@@ -16,8 +15,6 @@ trait Util {
 
   def firstN[T](c: Vector[Future[T]], n: Integer): Future[FirstNResultType[T]] = {
     final class FirstNContext {
-      // TODO Use pre allocated space of n and a more efficient way than locking.
-      var l = new ReentrantLock()
       var v: FirstNResultType[T] = Vector()
       val completed = new AtomicInteger(0)
       val done = new AtomicBoolean(false)
@@ -35,11 +32,9 @@ trait Util {
             val c = ctx.completed.incrementAndGet
 
             if (c <= n) {
-              ctx.l.lock()
-              try {
+
+              ctx.v.synchronized {
                 ctx.v = ctx.v :+ (i, t)
-              } finally {
-                ctx.l.unlock()
               }
 
               if (c == n) {
@@ -59,8 +54,6 @@ trait Util {
 
   def firstNSucc[T](c: Vector[Future[T]], n: Integer): Future[FirstNSuccResultType[T]] = {
     final class FirstNSuccContext {
-      // TODO Use pre allocated space of n and a more efficient way than locking.
-      var l = new ReentrantLock()
       var v: FirstNSuccResultType[T] = Vector()
       val succeeded = new AtomicInteger(0)
       val failed = new AtomicInteger(0)
@@ -98,11 +91,8 @@ trait Util {
               val c = ctx.succeeded.incrementAndGet
 
               if (c <= n) {
-                ctx.l.lock()
-                try {
+                ctx.v.synchronized {
                   ctx.v = ctx.v :+ (i, t.get)
-                } finally {
-                  ctx.l.unlock()
                 }
 
                 if (c == n) {

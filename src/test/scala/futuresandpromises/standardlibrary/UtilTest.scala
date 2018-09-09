@@ -14,10 +14,8 @@ class UtilTest extends UnitSpec {
 
   it should "return three futures" in {
     val executor = new ScalaFPExecutor
-    val futures = Vector.tabulate(5)(n => {
+    val futures = Vector.tabulate(3)(n => {
       ScalaFPUtil.async(executor, () => {
-        Thread.sleep(n * 5000)
-
         if (n % 2 == 0) {
           n
         } else {
@@ -30,17 +28,27 @@ class UtilTest extends UnitSpec {
 
     result.length should be(3)
 
-    val t0 = result(0)
-    t0._1 should be(0)
-    t0._2.get should be(0)
+    var counter = 0
 
-    val t1 = result(1)
-    t1._1 should be(1)
-    the[Exception] thrownBy t1._2.get should have message "test"
+    for (t <- result) {
+      t._1 match {
+        case 0 => {
+          t._2.get should be(0)
+          counter += 1
+        }
+        case 1 => {
+          the[Exception] thrownBy t._2.get should have message "test"
+          counter += 1
+        }
+        case 2 => {
+          t._2.get should be(2)
+          counter += 1
+        }
+        case _ => fail("Unexpected result: " + t)
+      }
+    }
 
-    val t3 = result(2)
-    t3._1 should be(2)
-    t3._2.get should be(2)
+    counter should be(3)
   }
 
   "firstNSucc" should "throw an exception" in {
@@ -52,8 +60,6 @@ class UtilTest extends UnitSpec {
     val executor = new ScalaFPExecutor(ExecutionContext.fromExecutor(Executors.newSingleThreadExecutor()))
     val futures = Vector.tabulate(5)(n => {
       ScalaFPUtil.async(executor, () => {
-        Thread.sleep(n * 5000)
-
         if (n % 2 == 0) {
           n
         } else {
@@ -66,17 +72,24 @@ class UtilTest extends UnitSpec {
 
     result.length should be(3)
 
-    val t0 = result(0)
-    t0._1 should be(0)
-    t0._2 should be(0)
+    var counter = 0
 
-    val t1 = result(1)
-    t1._1 should be(2)
-    t1._2 should be(2)
+    for (t <- result) {
+      t match {
+        case (0, 0) => {
+          counter += 1
+        }
+        case (2, 2) => {
+          counter += 1
+        }
+        case (4, 4) => {
+          counter += 1
+        }
+        case _ => fail("Unexpected result: " + t)
+      }
+    }
 
-    val t3 = result(2)
-    t3._1 should be(4)
-    t3._2 should be(4)
+    counter should be(3)
   }
 
   it should "fail with one of the futures" in {
