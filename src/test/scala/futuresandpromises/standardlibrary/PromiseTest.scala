@@ -1,36 +1,31 @@
-package test.scala.futuresandpromises.standardlibrary
+package tdauth.futuresandpromises.standardlibrary
 
-import org.scalatest._
-import main.scala.futuresandpromises.standardlibrary.ScalaFPExecutor
-import main.scala.futuresandpromises.standardlibrary.ScalaFPPromise
-import main.scala.futuresandpromises.standardlibrary.ScalaFPTry
-import main.scala.futuresandpromises.standardlibrary.ScalaFPUtil
-import main.scala.futuresandpromises.PredicateNotFulfilled
-import main.scala.futuresandpromises.UsingUninitializedTry
+import tdauth.futuresandpromises.UnitSpec
+import tdauth.futuresandpromises.UsingUninitializedTry
 
-class PromiseTest extends FlatSpec with Matchers {
-  "A future" should "be completed successfully by a promise" in {
+class PromiseTest extends UnitSpec {
+  "A promise" should "should complete a future successfully" in {
     val p = new ScalaFPPromise[Int]()
     val f = p.future()
     p.trySuccess(10)
     f.get should be(10)
   }
 
-  "A future" should "be completed by an exception by a promise" in {
+  it should "complete a future with an exception" in {
     val p = new ScalaFPPromise[Int]()
     val f = p.future()
     p.tryFailure(new RuntimeException("test"))
     the[RuntimeException] thrownBy f.get should have message "test"
   }
 
-  "A future" should "be completed by a promise with an empty Try" in {
+  it should "complete a future with an an empty Try" in {
     val p = new ScalaFPPromise[Int]()
     val f = p.future()
     p.tryComplete(new ScalaFPTry)
     the[UsingUninitializedTry] thrownBy f.get should have message null
   }
 
-  "A future" should "be completed by a promise with the help of a future" in {
+  it should "complete a future with the help of another future" in {
     val executor = new ScalaFPExecutor
     val future = ScalaFPUtil.async(executor, () => 10)
 
@@ -40,7 +35,7 @@ class PromiseTest extends FlatSpec with Matchers {
     f.get should be(10)
   }
 
-  "A future" should "be completed successfully by a promise with the help of a future" in {
+  it should "complete a future successfully with the help of another future" in {
     val executor = new ScalaFPExecutor
     val future = ScalaFPUtil.async(executor, () => 10)
 
@@ -50,7 +45,7 @@ class PromiseTest extends FlatSpec with Matchers {
     f.get should be(10)
   }
 
-  "A future" should "be completed by an exception by a promise with the help of a future" in {
+  it should "complete a future with an exception with the help of another future" in {
     val executor = new ScalaFPExecutor
     val future = ScalaFPUtil.async[Int](executor, () => throw new RuntimeException("test"))
 

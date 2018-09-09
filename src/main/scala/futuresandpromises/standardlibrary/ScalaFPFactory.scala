@@ -1,8 +1,8 @@
-package main.scala.futuresandpromises.standardlibrary
+package tdauth.futuresandpromises.standardlibrary
 
-import main.scala.futuresandpromises.Factory
-import main.scala.futuresandpromises.Promise
-import main.scala.futuresandpromises.Try
+import tdauth.futuresandpromises.Factory
+import tdauth.futuresandpromises.Promise
+import tdauth.futuresandpromises.Try
 
 class ScalaFPFactory extends Factory {
   override def createPromise[T]: Promise[T] = new ScalaFPPromise[T]

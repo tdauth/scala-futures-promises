@@ -1,11 +1,11 @@
-package test.scala.futuresandpromises.standardlibrary
+package tdauth.futuresandpromises.standardlibrary
 
-import org.scalatest._
-import main.scala.futuresandpromises.standardlibrary.ScalaFPExecutor
 import scala.concurrent.SyncVar
 
-class ExecutorTest extends FlatSpec with Matchers {
-  "A function" should "be called asynchronously" in {
+import tdauth.futuresandpromises.UnitSpec
+
+class ExecutorTest extends UnitSpec {
+  "An executor" should "call a function asynchronously" in {
     val executor = new ScalaFPExecutor
     val v = new SyncVar[Int]
     executor.submit(() => v.put(1))

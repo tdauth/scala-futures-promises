@@ -1,21 +1,22 @@
-package tdauth.futuresandpromises.standardlibrary
+package tdauth.futuresandpromises.combinators
 
 import java.util.concurrent.Executors
 
 import scala.concurrent.ExecutionContext
 
 import tdauth.futuresandpromises.UnitSpec
+import tdauth.futuresandpromises.standardlibrary.ScalaFPExecutor
 
 class UtilTest extends UnitSpec {
   "firstN" should "should throw an exception" in {
-    val result = ScalaFPUtil.firstN(Vector(), 3)
+    val result = CombinatorsUtil.firstN(Vector(), 3)
     the[RuntimeException] thrownBy result.get should have message "Not enough futures"
   }
 
   it should "return three futures" in {
     val executor = new ScalaFPExecutor(ExecutionContext.fromExecutor(Executors.newSingleThreadExecutor()))
     val futures = Vector.tabulate(10)(n => {
-      ScalaFPUtil.async(executor, () => {
+      CombinatorsUtil.async(executor, () => {
         Thread.sleep(n * 100)
 
         if (n % 2 == 0) {
@@ -26,7 +27,7 @@ class UtilTest extends UnitSpec {
       })
     })
 
-    val result = ScalaFPUtil.firstN(futures, 3).get
+    val result = CombinatorsUtil.firstN(futures, 3).get
 
     result.length should be(3)
 
@@ -44,14 +45,14 @@ class UtilTest extends UnitSpec {
   }
 
   "firstNSucc" should "throw an exception" in {
-    val result = ScalaFPUtil.firstNSucc(Vector(), 3)
+    val result = CombinatorsUtil.firstNSucc(Vector(), 3)
     the[RuntimeException] thrownBy result.get should have message "Not enough futures"
   }
 
   it should "return three successful futures" in {
     val executor = new ScalaFPExecutor(ExecutionContext.fromExecutor(Executors.newSingleThreadExecutor()))
     val futures = Vector.tabulate(10)(n => {
-      ScalaFPUtil.async(executor, () => {
+      CombinatorsUtil.async(executor, () => {
         Thread.sleep(n * 100)
 
         if (n % 2 == 0) {
@@ -62,7 +63,7 @@ class UtilTest extends UnitSpec {
       })
     })
 
-    val result = ScalaFPUtil.firstNSucc(futures, 3).get
+    val result = CombinatorsUtil.firstNSucc(futures, 3).get
 
     result.length should be(3)
 
@@ -82,12 +83,12 @@ class UtilTest extends UnitSpec {
   it should "fail with one of the futures" in {
     val executor = new ScalaFPExecutor(ExecutionContext.fromExecutor(Executors.newSingleThreadExecutor()))
     val futures = Vector.tabulate(10)(n => {
-      ScalaFPUtil.async[Int](executor, () => {
+      CombinatorsUtil.async[Int](executor, () => {
         throw new RuntimeException("test " + n)
       })
     })
 
-    val result = ScalaFPUtil.firstNSucc(futures, 3)
+    val result = CombinatorsUtil.firstNSucc(futures, 3)
 
     the[RuntimeException] thrownBy result.get should have message "test 7"
   }

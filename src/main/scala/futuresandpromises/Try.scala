@@ -1,4 +1,4 @@
-package main.scala.futuresandpromises
+package tdauth.futuresandpromises
 
 trait Try[T] {
   /**

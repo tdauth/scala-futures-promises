@@ -1,17 +1,13 @@
-package main.scala.futuresandpromises.standardlibrary
+package tdauth.futuresandpromises.standardlibrary
 
-import main.scala.futuresandpromises.Try
-import main.scala.futuresandpromises.UsingUninitializedTry
+import tdauth.futuresandpromises.Try
+import tdauth.futuresandpromises.UsingUninitializedTry
 
 class ScalaFPTry[T](val o: scala.Option[scala.util.Try[T]]) extends Try[T] {
 
-  def this() {
-    this(None)
-  }
+  def this() = this(None)
 
-  def this(t: scala.util.Try[T]) {
-    this(Some(t))
-  }
+  def this(t: scala.util.Try[T]) = this(Some(t))
 
   override def get(): T = {
     o match {

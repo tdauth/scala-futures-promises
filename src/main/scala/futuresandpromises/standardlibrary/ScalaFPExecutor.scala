@@ -1,14 +1,12 @@
-package main.scala.futuresandpromises.standardlibrary
+package tdauth.futuresandpromises.standardlibrary
 
-import main.scala.futuresandpromises.Executor
-import java.util.concurrent.Executors
 import scala.concurrent.ExecutionContext
+
+import tdauth.futuresandpromises.Executor
 
 class ScalaFPExecutor(val executionContext: ExecutionContext) extends Executor {
 
-  def this() {
-    this(ExecutionContext.global)
-  }
+  def this() = this(ExecutionContext.global)
 
   override def submit(f: () => Unit) = {
     executionContext.execute(new Runnable() {

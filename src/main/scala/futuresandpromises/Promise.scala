@@ -1,4 +1,4 @@
-package main.scala.futuresandpromises
+package tdauth.futuresandpromises
 
 trait Promise[T] {
   def future(): Future[T]

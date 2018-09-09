@@ -21,6 +21,20 @@ The source code of Scala FP in Scala version 2.13.x can be found [here](https://
 The latest API documentation can be found [here](https://www.scala-lang.org/api/current/scala/concurrent/index.html).
 Futures in Scala FP can have multiple callbacks registered and have multi-read semantics.
 
+### Usage
+This basic example shows how create a future with the Scala FP implementation:
+```
+val executor = new ScalaFPExecutor
+val f0 = ScalaFPUtil.async(executor, () => 10).guard(v => v == 10).then((t : Try[Int]) => t.get() * 10)
+val f1 = ScalaFPUtil.async(executor, () => 11)
+val f2 = f0.first(f1)
+println(f1.get())
+```
+
+## Combinators
+The package [combinators](./src/main/scala/futuresandpromises/combinators) contains different implementations of the non-blocking combinators using each other.
+Furthermore, it provides additional combinators.
+
 ## Unit Tests
 The unit tests are realized with the help of [ScalaTest](http://www.scalatest.org/).
 See [Using ScalaTest with sbt](http://www.scalatest.org/user_guide/using_scalatest_with_sbt) for more information about how to use it with sbt.

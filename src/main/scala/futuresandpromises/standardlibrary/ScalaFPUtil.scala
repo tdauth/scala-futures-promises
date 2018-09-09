@@ -1,8 +1,8 @@
-package main.scala.futuresandpromises.standardlibrary
+package tdauth.futuresandpromises.standardlibrary
 
-import main.scala.futuresandpromises.Executor
-import main.scala.futuresandpromises.Future
-import main.scala.futuresandpromises.Util
+import tdauth.futuresandpromises.Executor
+import tdauth.futuresandpromises.Future
+import tdauth.futuresandpromises.Util
 
 class ScalaFPUtil extends Util {
   override def async[T](ex: Executor, f: () => T): Future[T] = {
@@ -32,5 +32,4 @@ object ScalaFPUtil {
   def firstNSucc[T](c: Vector[Future[T]], n: Integer): Future[Util#FirstNSuccResultType[T]] = {
     util.firstNSucc[T](c, n)
   }
-
 }

@@ -1,11 +1,11 @@
-package main.scala.futuresandpromises.standardlibrary
+package tdauth.futuresandpromises.standardlibrary
 
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import scala.util.control.NonFatal
 
-import main.scala.futuresandpromises.Future
-import main.scala.futuresandpromises.Promise
+import tdauth.futuresandpromises.Future
+import tdauth.futuresandpromises.Try
 
 class ScalaFPFuture[T](f: scala.concurrent.Future[T]) extends Future[T] {
 
@@ -17,7 +17,7 @@ class ScalaFPFuture[T](f: scala.concurrent.Future[T]) extends Future[T] {
     f.isCompleted
   }
 
-  override def then[S](callback: main.scala.futuresandpromises.Try[T] => S) = {
+  override def then[S](callback: Try[T] => S): Future[S] = {
     val transformCallback: (scala.util.Try[T]) => scala.util.Try[S] = (t: scala.util.Try[T]) => {
       val transformedTry = new ScalaFPTry(t)
       try {

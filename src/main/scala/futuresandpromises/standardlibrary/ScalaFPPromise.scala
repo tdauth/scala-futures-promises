@@ -1,9 +1,9 @@
-package main.scala.futuresandpromises.standardlibrary
+package tdauth.futuresandpromises.standardlibrary
 
-import main.scala.futuresandpromises.Promise
-import main.scala.futuresandpromises.Future
-import main.scala.futuresandpromises.Try
-import main.scala.futuresandpromises.UsingUninitializedTry
+import tdauth.futuresandpromises.Future
+import tdauth.futuresandpromises.Promise
+import tdauth.futuresandpromises.Try
+import tdauth.futuresandpromises.UsingUninitializedTry
 
 class ScalaFPPromise[T]() extends Promise[T] {
   private val p = scala.concurrent.Promise.apply[T]

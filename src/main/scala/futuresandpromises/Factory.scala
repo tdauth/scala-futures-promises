@@ -1,4 +1,4 @@
-package main.scala.futuresandpromises
+package tdauth.futuresandpromises
 
 trait Factory {
   // This method is required since Promise is defined as trait:

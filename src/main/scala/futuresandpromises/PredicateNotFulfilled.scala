@@ -1,4 +1,4 @@
-package main.scala.futuresandpromises
+package tdauth.futuresandpromises
 
 class PredicateNotFulfilled extends Exception {
 }
