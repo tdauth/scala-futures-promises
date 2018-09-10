@@ -7,10 +7,26 @@ import scala.collection.immutable.Vector
 import scala.util.control.NonFatal
 
 trait Util {
-  def async[T](ex: Executor, f: () => T): Future[T]
   def factory: Factory
 
   // Derived methods:
+  def async[T](ex: Executor, f: () => T): Future[T] = {
+    val p = factory.createPromise[T]
+    val result = p.future()
+    factory.assignExecutorToFuture(result, ex)
+
+    ex.submit(() => {
+      try {
+        val result = f()
+        p.trySuccess(result)
+      } catch {
+        case NonFatal(e) => p.tryFailure(e)
+      }
+    })
+
+    result
+  }
+
   type FirstNResultType[T] = Vector[Tuple2[Int, Try[T]]]
 
   def firstN[T](c: Vector[Future[T]], n: Integer): Future[FirstNResultType[T]] = {

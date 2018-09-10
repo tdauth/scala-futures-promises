@@ -5,10 +5,12 @@ package tdauth.futuresandpromises
  * These are required for the derived methods in the traits.
  */
 trait Factory {
-  // This method is required since Promise is defined as trait:
   def createPromise[T]: Promise[T]
-
-  // These two methods are required since Try is defined as trait:
   def createTryFromValue[T](v: T): Try[T]
   def createTryFromException[T](e: Throwable): Try[T]
+  /**
+   * This method is required by {@link Util#async} to assign the executor which is used to complete the future initially.
+   * The executor should be stored to be used by the callback.
+   */
+  def assignExecutorToFuture[T](f: Future[T], e: Executor)
 }

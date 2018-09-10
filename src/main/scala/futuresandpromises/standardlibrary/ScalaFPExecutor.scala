@@ -16,3 +16,7 @@ class ScalaFPExecutor(val executionContext: ExecutionContext) extends Executor {
     })
   }
 }
+
+object ScalaFPExecutor {
+  val global = new ScalaFPExecutor
+}

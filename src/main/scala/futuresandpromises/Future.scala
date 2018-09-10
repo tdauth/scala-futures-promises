@@ -89,7 +89,7 @@ trait Future[T] {
    * In the C++ implementation we did rely on the assumption that the promise will be deleted and the resulting future would fail with {@link BrokenPromise}.
    * However, we cannot make such an assumption in this implementation. since Scala has a garbage collection.
    *
-   * @see {@link combinators.CombinatorsFuture#firstSuccWithOrElse} for a different implementation based on {@link #orElse}.
+   * @see {@link combinators.Combinators#firstSuccWithOrElse} for a different implementation based on {@link #orElse}.
    */
   def firstSucc(other: Future[T]): Future[T] = {
     val p = factory.createPromise[T]
