@@ -39,6 +39,7 @@ class FutureTest extends UnitSpec {
   it should "complete the final future with first one over the second one with the help of orElse" in {
     val executor = new ScalaFPExecutor
     val f0 = ScalaFPUtil.async(executor, () => 10)
+    f0.sync
     val f1 = ScalaFPUtil.async(executor, () => { Thread.sleep(1000); 11 })
     val f = f0.orElse(f1)
     f.get should be(10)
@@ -55,44 +56,49 @@ class FutureTest extends UnitSpec {
   it should "complete the final future with the first one over the second one with the help of orElse when both are failing" in {
     val executor = new ScalaFPExecutor
     val f0 = ScalaFPUtil.async[Int](executor, () => throw new RuntimeException("test 0"))
+    f0.sync
     val f1 = ScalaFPUtil.async[Int](executor, () => { Thread.sleep(1000); throw new RuntimeException("test 1") })
     val f = f0.orElse(f1)
     the[RuntimeException] thrownBy f.get should have message "test 0"
   }
 
-  it should "complete the final future with the first one with the help of first" in {
+  "first" should "complete the final future with the first one" in {
     val executor = new ScalaFPExecutor
     val f0 = ScalaFPUtil.async(executor, () => 10)
+    f0.sync
     val f1 = ScalaFPUtil.async(executor, () => { Thread.sleep(1000); 11 })
     val f = f0.first(f1)
     f.get should be(10)
   }
 
-  it should "complete the final future with the second one with the help of first" in {
+  it should "complete the final future with the second one" in {
     val executor = new ScalaFPExecutor
-    val f0 = ScalaFPUtil.async(executor, () => { Thread.sleep(1000); 10 })
     val f1 = ScalaFPUtil.async(executor, () => 11)
+    f1.sync
+    val f0 = ScalaFPUtil.async(executor, () => { Thread.sleep(1000); 10 })
     val f = f0.first(f1)
     f.get should be(11)
   }
 
-  it should "complete the final future with the second one with the help of first although it fails" in {
+  it should "complete the final future with the second one although it fails" in {
     val executor = new ScalaFPExecutor
-    val f0 = ScalaFPUtil.async(executor, () => { Thread.sleep(1000); 10 })
     val f1 = ScalaFPUtil.async[Int](executor, () => throw new RuntimeException("test 1"))
+    f1.sync
+    val f0 = ScalaFPUtil.async(executor, () => { Thread.sleep(1000); 10 })
     val f = f0.first(f1)
     the[RuntimeException] thrownBy f.get should have message "test 1"
   }
 
-  it should "complete the final future with the first one with the help of firstSucc" in {
+  "firstSucc" should "complete the final future with the first one" in {
     val executor = new ScalaFPExecutor
     val f0 = ScalaFPUtil.async(executor, () => 10)
+    f0.sync
     val f1 = ScalaFPUtil.async(executor, () => { Thread.sleep(1000); 11 })
     val f = f0.firstSucc(f1)
     f.get should be(10)
   }
 
-  it should "complete the final future with the second one with the help of firstSucc" in {
+  it should "complete the final future with the second one" in {
     val executor = new ScalaFPExecutor
     val f0 = ScalaFPUtil.async[Int](executor, () => throw new RuntimeException("test"))
     val f1 = ScalaFPUtil.async(executor, () => 11)
@@ -100,19 +106,21 @@ class FutureTest extends UnitSpec {
     f.get should be(11)
   }
 
-  it should "complete with the exception of the second future with the help of firstSucc" in {
+  it should "complete with the exception of the second future" in {
     val executor = new ScalaFPExecutor
     val f0 = ScalaFPUtil.async[Int](executor, () => throw new RuntimeException("test 0"))
+    f0.sync
     val f1 = ScalaFPUtil.async[Int](executor, () => { Thread.sleep(1000); throw new RuntimeException("test 1") })
     val f = f0.firstSucc(f1)
 
     the[RuntimeException] thrownBy f.get should have message "test 1"
   }
 
-  it should "complete with the exception of the first future with the help of firstSucc" in {
+  it should "complete with the exception of the first future" in {
     val executor = new ScalaFPExecutor
-    val f0 = ScalaFPUtil.async[Int](executor, () => { Thread.sleep(1000); throw new RuntimeException("test 0") })
     val f1 = ScalaFPUtil.async[Int](executor, () => throw new RuntimeException("test 1"))
+    f1.sync
+    val f0 = ScalaFPUtil.async[Int](executor, () => { Thread.sleep(1000); throw new RuntimeException("test 0") })
     val f = f0.firstSucc(f1)
 
     the[RuntimeException] thrownBy f.get should have message "test 0"

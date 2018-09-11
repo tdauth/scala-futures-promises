@@ -6,6 +6,7 @@ import tdauth.futuresandpromises.Future
 import tdauth.futuresandpromises.Try
 import tdauth.futuresandpromises.standardlibrary.ScalaFPPromise
 import tdauth.futuresandpromises.Util
+import tdauth.futuresandpromises.standardlibrary.ScalaFPUtil
 
 /**
  * Additional implementations of the non-blocking combinators.
@@ -51,6 +52,24 @@ object Combinators {
       }
 
       t.get
+    })
+  }
+
+  /**
+   * Uses {@link Util#firstN} instead of a promise-based implementation.
+   */
+  def firstWithFirstN[T](t: Future[T], other: Future[T]): Future[T] = {
+    ScalaFPUtil.firstN[T](Vector(t, other), 1).then((t : Try[Util#FirstNResultType[T]]) => {
+      t.get()(0)._2.get()
+    })
+  }
+
+  /**
+   * Uses {@link Util#firstNSucc} instead of a promise-based implementation.
+   */
+  def firstSuccWithFirstNSucc[T](t: Future[T], other: Future[T]): Future[T] = {
+    ScalaFPUtil.firstNSucc[T](Vector(t, other), 1).then((t : Try[Util#FirstNSuccResultType[T]]) => {
+      t.get()(0)._2
     })
   }
 

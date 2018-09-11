@@ -95,10 +95,11 @@ class UtilTest extends UnitSpec {
   it should "fail with one of the futures" in {
     val executor = new ScalaFPExecutor
     val futures = Vector.tabulate(5)(n => {
-      ScalaFPUtil.async[Int](executor, () => {
-        Thread.sleep(n * 5000)
+      val f = ScalaFPUtil.async[Int](executor, () => {
         throw new RuntimeException("test " + n)
       })
+      f.sync
+      f
     })
 
     val result = ScalaFPUtil.firstNSucc(futures, 3)

@@ -14,9 +14,36 @@ import scala.util.control.NonFatal
  */
 trait Future[T] {
   // Basic methods:
+
+  /**
+   * Blocks until the future is completed and returns its result value.
+   * If it is completed by an exception, the exception is rethrown by the call.
+   *
+   * @return Returns the result value of the future.
+   */
   def get: T
+
+  /**
+   * Checks if the future has been completed or is still uncompleted.
+   * @return Returns true if the future has been completed. Otherwise, it returns false.
+   */
   def isReady: Boolean
+
+  /**
+   * Registers a callback function which is submitted to the future's executor when the future is completed.
+   * The callback function gets the result of the future as parameter and its return value is used for the result of a new future.
+   * If the callback function call throws an exception, the new resulting future is completed with the exception rather than the return value of the callback function.
+   *
+   * @param f Callback function which is executed by the same executor as this future and which gets the result of this future and of which the return value or thrown exception completes the newly created future.
+   * @return Returns a newly created future which is completed by the callback function at some point in time.
+   */
   def then[S](f: (Try[T]) => S): Future[S]
+
+  /**
+   * Blocks until the future has been completed.
+   * This method is not really necessary but useful for testing.
+   */
+  def sync: Unit
 
   def factory: Factory
 
@@ -71,14 +98,8 @@ trait Future[T] {
 
   def first(other: Future[T]): Future[T] = {
     val p = factory.createPromise[T]
-
-    this.onComplete((t: Try[T]) => {
-      p.tryComplete(t)
-    })
-
-    other.onComplete((t: Try[T]) => {
-      p.tryComplete(t)
-    })
+    p.tryCompleteWith(this)
+    p.tryCompleteWith(other)
 
     p.future
   }
@@ -88,6 +109,7 @@ trait Future[T] {
    * If both futures fail, it fails with the final failing future to prevent any starvation of the program.
    * In the C++ implementation we did rely on the assumption that the promise will be deleted and the resulting future would fail with {@link BrokenPromise}.
    * However, we cannot make such an assumption in this implementation. since Scala has a garbage collection.
+   * If we would accept starvation of the program, we could simply use {@link Promise#trySuccess}.
    *
    * @see {@link combinators.Combinators#firstSuccWithOrElse} for a different implementation based on {@link #orElse}.
    */
