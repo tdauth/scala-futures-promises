@@ -1,12 +1,13 @@
 package tdauth.futuresandpromises
 
 trait Promise[T] {
+  // Basic methods:
   def future(): Future[T]
   def tryComplete(v: Try[T]): Boolean
 
   def factory: Factory
 
-  // derived methods:
+  // Derived methods:
   def trySuccess(v: T): Boolean = {
     this.tryComplete(factory.createTryFromValue(v))
   }
