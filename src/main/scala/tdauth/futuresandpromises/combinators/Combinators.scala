@@ -79,6 +79,21 @@ object Combinators {
    * @{
    */
   /**
+   * There is several attempts to allow retries of futures until they succeed or a user-defined condition is satisfied:
+   * <ul>
+   * <li>http://www.home.hs-karlsruhe.de/~suma0002/publications/retriable-futures.pdf</li>
+   * <li>https://github.com/softwaremill/retry</li>
+   * <li>https://issues.scala-lang.org/browse/SI-8615</li>
+   * <li>https://stackoverflow.com/questions/7930814/whats-the-scala-way-to-implement-a-retry-able-call-like-this-one</li>
+   * <li>https://github.com/facebook/folly/blob/master/folly/futures/Retrying.h</li>
+   * <li>https://github.com/facebook/folly/blob/master/folly/futures/test/RetryingTest.cpp</li>
+   * <li>https://hackernoon.com/exponential-back-off-with-scala-futures-7426340d0069</li>
+   * </ul>
+   * Some of them allow backing off strategies to increase the time intervals before retrying again.
+   * This reduces unnecessary computing power on useless retries.
+   */
+  //def retry[T](f : Future[T], p: T => Boolean) : Future[T]
+  /**
    * The current method {@link Future#first} prioritizes the first future if both futures have already been completed.
    * When both futures complete at the exact same time, it depends which callback is called first and therefore which {@link Promise#tryComplete} call is executed first.
    * This implementation is similar to {@link Future#first} but should be like https://golang.org/ref/spec#Select_statements and select the first future randomly if both have been completed.

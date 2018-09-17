@@ -3,5 +3,5 @@ package tdauth.futuresandpromises
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 
-abstract class UnitSpec extends FlatSpec with Matchers {
+abstract class AbstractUnitSpec extends FlatSpec with Matchers {
 }

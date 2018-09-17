@@ -36,8 +36,7 @@ f2.onComplete((t: Try[Int]) => println(t.get()))
 ```
 
 ## Combinators
-The package [combinators](./src/main/scala/futuresandpromises/combinators) contains different implementations of the non-blocking combinators using each other.
-Furthermore, it provides additional combinators.
+The object [Combinators](./src/main/scala/futuresandpromises/combinators/Combinators.scala) contains different implementations of the non-blocking combinators using each other.
 
 ## Unit Tests
 The unit tests are realized with the help of [ScalaTest](http://www.scalatest.org/).

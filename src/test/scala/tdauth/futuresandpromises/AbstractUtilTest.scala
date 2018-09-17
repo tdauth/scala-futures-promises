@@ -1,21 +1,15 @@
-package tdauth.futuresandpromises.standardlibrary
+package tdauth.futuresandpromises
 
-import java.util.concurrent.Executors
-
-import scala.concurrent.ExecutionContext
-
-import tdauth.futuresandpromises.UnitSpec
-
-class UtilTest extends UnitSpec {
+abstract class AbstractUtilTest extends AbstractUnitSpec {
   "firstN" should "should throw an exception" in {
-    val result = ScalaFPUtil.firstN(Vector(), 3)
+    val result = getUtil.firstN(Vector(), 3)
     the[RuntimeException] thrownBy result.get should have message "Not enough futures"
   }
 
   it should "return three futures" in {
-    val executor = new ScalaFPExecutor
+    val executor = getExecutor
     val futures = Vector.tabulate(3)(n => {
-      ScalaFPUtil.async(executor, () => {
+      getUtil.async(executor, () => {
         if (n % 2 == 0) {
           n
         } else {
@@ -24,7 +18,7 @@ class UtilTest extends UnitSpec {
       })
     })
 
-    val result = ScalaFPUtil.firstN(futures, 3).get
+    val result = getUtil.firstN(futures, 3).get
 
     result.length should be(3)
 
@@ -52,14 +46,14 @@ class UtilTest extends UnitSpec {
   }
 
   "firstNSucc" should "throw an exception" in {
-    val result = ScalaFPUtil.firstNSucc(Vector(), 3)
+    val result = getUtil.firstNSucc(Vector(), 3)
     the[RuntimeException] thrownBy result.get should have message "Not enough futures"
   }
 
   it should "return three successful futures" in {
-    val executor = new ScalaFPExecutor(ExecutionContext.fromExecutor(Executors.newSingleThreadExecutor()))
+    val executor = getExecutor
     val futures = Vector.tabulate(5)(n => {
-      ScalaFPUtil.async(executor, () => {
+      getUtil.async(executor, () => {
         if (n % 2 == 0) {
           n
         } else {
@@ -68,7 +62,7 @@ class UtilTest extends UnitSpec {
       })
     })
 
-    val result = ScalaFPUtil.firstNSucc(futures, 3).get
+    val result = getUtil.firstNSucc(futures, 3).get
 
     result.length should be(3)
 
@@ -93,17 +87,20 @@ class UtilTest extends UnitSpec {
   }
 
   it should "fail with one of the futures" in {
-    val executor = new ScalaFPExecutor
+    val executor = getExecutor
     val futures = Vector.tabulate(5)(n => {
-      val f = ScalaFPUtil.async[Int](executor, () => {
+      val f = getUtil.async[Int](executor, () => {
         throw new RuntimeException("test " + n)
       })
       f.sync
       f
     })
 
-    val result = ScalaFPUtil.firstNSucc(futures, 3)
+    val result = getUtil.firstNSucc(futures, 3)
 
     the[RuntimeException] thrownBy result.get should have message "test 2"
   }
+
+  def getExecutor: Executor
+  def getUtil: Util
 }

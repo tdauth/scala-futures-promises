@@ -91,9 +91,9 @@ trait Util {
               val c = ctx.failed.incrementAndGet
 
               /*
-							 * Since the local variable can never have the counter incremented by more than one,
-							 * we can check for the exact final value and do only one setException call.
-							 */
+               * Since the local variable can never have the counter incremented by more than one,
+               * we can check for the exact final value and do only one setException call.
+               */
               if (total - c + 1 == n) {
                 try {
                   t.get
