@@ -36,6 +36,9 @@ val f2 = f0.first(f1)
 f2.onComplete((t: Try[Int]) => println(t.get()))
 ```
 
+## Implementation based on STM
+This implementation is based on Software Transactional Memory and its implementation in Scala called [ScalaSTM](https://nbronson.github.io/scala-stm/index.html).
+
 ## Combinators
 The object [Combinators](./src/main/scala/futuresandpromises/combinators/Combinators.scala) contains different implementations of the non-blocking combinators using each other.
 
