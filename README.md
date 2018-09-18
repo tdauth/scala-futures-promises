@@ -52,6 +52,9 @@ The project uses [scoverage](http://scoverage.org/) to generate coverage reports
 It uses the plugin [sbt-scoverage](https://github.com/scoverage/sbt-scoverage).
 The command `sbt clean coverage test coverageReport` generates coverage reports into the directory `target/scala-<scala-version>/scoverage-report`.
 
+## Performance Tests
+[scalameter](https://scalameter.github.io/) is a Scala library which allows you to write performance tests in Scala.
+
 ## API Documentation
 The API documentation can be generated with [scaladoc](https://docs.scala-lang.org/style/scaladoc.html) with the following command: `sbt doc`
 It will be generated into the directory `target/scala-<scala-version>/api/`.
