@@ -1,4 +1,4 @@
-# Scala Futures and Promises
+# Advanced Futures and Promises with Scala
 
 Advanced futures and promises API for Scala based on our paper [Advanced Futures and Promises in C++](http://www.home.hs-karlsruhe.de/~suma0002/publications/advanced-futures-promises-cpp.pdf).
 It provides an implementation based on the Scala Standard Library for futures and promises.
@@ -15,6 +15,7 @@ For the same reason the exception type `BrokenPromise` is never used in Scala.
 
 ## Automatic Build with TravisCI
 [![Build Status](https://travis-ci.org/tdauth/scala-futures-promises.svg?branch=master)](https://travis-ci.org/tdauth/scala-futures-promises)
+[![Code Coverage](https://img.shields.io/codecov/c/github/tdauth/scala-futures-promises/master.svg)](https://codecov.io/github/tdauth/scala-futures-promises?branch=master)
 
 ## Manual Build
 Use the command `sbt compile` to build the project manually.
