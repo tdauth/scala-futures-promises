@@ -1,6 +1,6 @@
 package tdauth.futuresandpromises
 
-import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 
 import scala.util.control.NonFatal
 
@@ -118,31 +118,21 @@ trait Future[T] {
     /*
      * This context is required to store if both futures have failed to prevent starvation.
      */
-    val ctx = (new AtomicBoolean(false), new AtomicBoolean(false))
-
-    this.onComplete((t: Try[T]) => {
+    val ctx = new AtomicInteger(0);
+    val callback = (t: Try[T]) => {
       if (t.hasException) {
-        ctx._1.set(true)
+        val c = ctx.incrementAndGet();
 
-        if (ctx._2.get) {
+        if (c == 2) {
           p.tryComplete(t)
         }
       } else {
         p.trySuccess(t.get())
       }
-    })
+    }: Unit
 
-    other.onComplete((t: Try[T]) => {
-      if (t.hasException) {
-        ctx._2.set(true)
-
-        if (ctx._1.get) {
-          p.tryComplete(t)
-        }
-      } else {
-        p.trySuccess(t.get())
-      }
-    })
+    this.onComplete(callback)
+    other.onComplete(callback)
 
     p.future
   }

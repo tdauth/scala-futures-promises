@@ -29,8 +29,8 @@ trait Util {
 
   type FirstNResultType[T] = Vector[Tuple2[Int, Try[T]]]
 
-  def firstN[T](c: Vector[Future[T]], n: Integer): Future[FirstNResultType[T]] = {
-    final class FirstNContext {
+  def firstN[T](futures: Vector[Future[T]], n: Integer): Future[FirstNResultType[T]] = {
+    class FirstNContext {
       var v: FirstNResultType[T] = Vector()
       val completed = new AtomicInteger(0)
       val done = new AtomicBoolean(false)
@@ -39,10 +39,10 @@ trait Util {
 
     val ctx = new FirstNContext
 
-    if (c.size < n) {
+    if (futures.size < n) {
       ctx.p.tryFailure(new RuntimeException("Not enough futures"))
     } else {
-      for ((f, i) <- c.view.zipWithIndex) {
+      for ((f, i) <- futures.view.zipWithIndex) {
         f.onComplete((t: Try[T]) => {
           if (!ctx.done.get) {
             val c = ctx.completed.incrementAndGet
@@ -68,8 +68,8 @@ trait Util {
 
   type FirstNSuccResultType[T] = Vector[Tuple2[Int, T]]
 
-  def firstNSucc[T](c: Vector[Future[T]], n: Integer): Future[FirstNSuccResultType[T]] = {
-    final class FirstNSuccContext {
+  def firstNSucc[T](futures: Vector[Future[T]], n: Integer): Future[FirstNSuccResultType[T]] = {
+    class FirstNSuccContext {
       var v: FirstNSuccResultType[T] = Vector()
       val succeeded = new AtomicInteger(0)
       val failed = new AtomicInteger(0)
@@ -78,12 +78,12 @@ trait Util {
     }
 
     val ctx = new FirstNSuccContext
-    val total = c.size
+    val total = futures.size
 
     if (total < n) {
       ctx.p.tryFailure(new RuntimeException("Not enough futures"))
     } else {
-      for ((f, i) <- c.view.zipWithIndex) {
+      for ((f, i) <- futures.view.zipWithIndex) {
         f.onComplete((t: Try[T]) => {
           if (!ctx.done.get) {
             // ignore exceptions until as many futures failed that n futures cannot be completed successfully anymore
