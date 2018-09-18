@@ -4,7 +4,7 @@ abstract class AbstractFutureTest extends AbstractUnitSpec {
   "A future" should "be created asynchronously" in {
     val executor = getExecutor
     val util = getUtil
-    val future = util.async(executor, () => { Thread.sleep(1000); 10 })
+    val future = util.async(executor, () => { delay(); 10 })
     future.isReady should be(false)
     future.get should be(10)
     future.isReady should be(true)
@@ -43,7 +43,7 @@ abstract class AbstractFutureTest extends AbstractUnitSpec {
     val util = getUtil
     val f0 = util.async(executor, () => 10)
     f0.sync
-    val f1 = util.async(executor, () => { Thread.sleep(1000); 11 })
+    val f1 = util.async(executor, () => { delay(); 11 })
     val f = f0.orElse(f1)
     f.get should be(10)
   }
@@ -62,7 +62,7 @@ abstract class AbstractFutureTest extends AbstractUnitSpec {
     val util = getUtil
     val f0 = util.async[Int](executor, () => throw new RuntimeException("test 0"))
     f0.sync
-    val f1 = util.async[Int](executor, () => { Thread.sleep(1000); throw new RuntimeException("test 1") })
+    val f1 = util.async[Int](executor, () => { delay(); throw new RuntimeException("test 1") })
     val f = f0.orElse(f1)
     the[RuntimeException] thrownBy f.get should have message "test 0"
   }
@@ -72,7 +72,7 @@ abstract class AbstractFutureTest extends AbstractUnitSpec {
     val util = getUtil
     val f0 = util.async(executor, () => 10)
     f0.sync
-    val f1 = util.async(executor, () => { Thread.sleep(1000); 11 })
+    val f1 = util.async(executor, () => { delay(); 11 })
     val f = f0.first(f1)
     f.get should be(10)
   }
@@ -82,7 +82,7 @@ abstract class AbstractFutureTest extends AbstractUnitSpec {
     val util = getUtil
     val f1 = util.async(executor, () => 11)
     f1.sync
-    val f0 = util.async(executor, () => { Thread.sleep(1000); 10 })
+    val f0 = util.async(executor, () => { delay(); 10 })
     val f = f0.first(f1)
     f.get should be(11)
   }
@@ -92,7 +92,7 @@ abstract class AbstractFutureTest extends AbstractUnitSpec {
     val util = getUtil
     val f1 = util.async[Int](executor, () => throw new RuntimeException("test 1"))
     f1.sync
-    val f0 = util.async(executor, () => { Thread.sleep(1000); 10 })
+    val f0 = util.async(executor, () => { delay(); 10 })
     val f = f0.first(f1)
     the[RuntimeException] thrownBy f.get should have message "test 1"
   }
@@ -102,7 +102,7 @@ abstract class AbstractFutureTest extends AbstractUnitSpec {
     val util = getUtil
     val f0 = util.async(executor, () => 10)
     f0.sync
-    val f1 = util.async(executor, () => { Thread.sleep(1000); 11 })
+    val f1 = util.async(executor, () => { delay(); 11 })
     val f = f0.firstSucc(f1)
     f.get should be(10)
   }
@@ -121,7 +121,7 @@ abstract class AbstractFutureTest extends AbstractUnitSpec {
     val util = getUtil
     val f0 = util.async[Int](executor, () => throw new RuntimeException("test 0"))
     f0.sync
-    val f1 = util.async[Int](executor, () => { Thread.sleep(1000); throw new RuntimeException("test 1") })
+    val f1 = util.async[Int](executor, () => { delay(); throw new RuntimeException("test 1") })
     val f = f0.firstSucc(f1)
 
     the[RuntimeException] thrownBy f.get should have message "test 1"
@@ -132,7 +132,7 @@ abstract class AbstractFutureTest extends AbstractUnitSpec {
     val util = getUtil
     val f1 = util.async[Int](executor, () => throw new RuntimeException("test 1"))
     f1.sync
-    val f0 = util.async[Int](executor, () => { Thread.sleep(1000); throw new RuntimeException("test 0") })
+    val f0 = util.async[Int](executor, () => { delay(); throw new RuntimeException("test 0") })
     val f = f0.firstSucc(f1)
 
     the[RuntimeException] thrownBy f.get should have message "test 0"
