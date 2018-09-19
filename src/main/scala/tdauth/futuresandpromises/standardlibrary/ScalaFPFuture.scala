@@ -4,10 +4,11 @@ import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import scala.util.control.NonFatal
 
+import tdauth.futuresandpromises.Factory
 import tdauth.futuresandpromises.Future
 import tdauth.futuresandpromises.Try
 
-class ScalaFPFuture[T](f: scala.concurrent.Future[T], var ex: ScalaFPExecutor) extends Future[T] {
+class ScalaFPFuture[T](val f: scala.concurrent.Future[T], var ex: ScalaFPExecutor) extends Future[T] {
 
   override def get: T = Await.result(f, Duration.Inf)
 
@@ -30,5 +31,5 @@ class ScalaFPFuture[T](f: scala.concurrent.Future[T], var ex: ScalaFPExecutor) e
 
   override def sync: Unit = Await.ready(f, Duration.Inf)
 
-  override def factory = new ScalaFPFactory
+  override def factory: Factory = new ScalaFPFactory
 }

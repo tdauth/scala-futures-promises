@@ -1,12 +1,13 @@
 package tdauth.futuresandpromises.standardlibrary
 
+import tdauth.futuresandpromises.Factory
 import tdauth.futuresandpromises.Future
 import tdauth.futuresandpromises.Promise
 import tdauth.futuresandpromises.Try
 import tdauth.futuresandpromises.UsingUninitializedTry
 
 class ScalaFPPromise[T] extends Promise[T] {
-  private val p = scala.concurrent.Promise.apply[T]
+  protected val p = scala.concurrent.Promise.apply[T]
 
   override def future(): Future[T] = new ScalaFPFuture(p.future, ScalaFPExecutor.global)
 
@@ -18,5 +19,5 @@ class ScalaFPPromise[T] extends Promise[T] {
     }
   }
 
-  override def factory = new ScalaFPFactory
+  override def factory: Factory = new ScalaFPFactory
 }
