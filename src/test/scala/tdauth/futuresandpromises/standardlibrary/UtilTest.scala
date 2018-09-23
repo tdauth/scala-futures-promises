@@ -5,6 +5,7 @@ import tdauth.futuresandpromises.Executor
 import tdauth.futuresandpromises.Util
 
 class UtilTest extends AbstractUtilTest {
-  def getExecutor: Executor = new ScalaFPExecutor
-  def getUtil: Util = new ScalaFPUtil
+  override def getTestName: String = "ScalaFPUtil"
+  override def getExecutor: Executor = new ScalaFPExecutor
+  override def getUtil: Util = new ScalaFPUtil
 }

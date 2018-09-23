@@ -7,4 +7,6 @@ abstract class AbstractUnitSpec extends FlatSpec with Matchers {
   def delay() = {
     Thread.sleep(3000);
   }
+
+  def getTestName: String
 }

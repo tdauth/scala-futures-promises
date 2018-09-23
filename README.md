@@ -40,6 +40,11 @@ f2.onComplete((t: Try[Int]) => println(t.get()))
 There is a second implementation located in the package [nonderived](./src/main/scala/tdauth/futuresandpromises/nonderived) which is based on the first Scala FP implementation.
 However, it implements all derived methods with methods which are already provided by Scala FP if it is possible.
 This implementation shows the power of Scala FP itself.
+The following combinators provided by our Advanced Futures and Promises are not directly provided by Scala FP (see <https://stackoverflow.com/questions/52408674/do-scala-futures-support-for-non-blocking-combinators-such-as-firstncompletedof>):
+* `Util.firstN`
+* `Util.firstNSucc`
+* `Promise.trySuccessWith`
+* `Promise.tryFailureWith`
 
 ## Combinators
 The object [Combinators](./src/main/scala/tdauth/futuresandpromises/combinators/Combinators.scala) contains different implementations of the non-blocking combinators using each other.
@@ -53,6 +58,10 @@ Use the command `sbt test` to run all unit tests.
 The project uses [scoverage](http://scoverage.org/) to generate coverage reports.
 It uses the plugin [sbt-scoverage](https://github.com/scoverage/sbt-scoverage).
 The command `sbt clean coverage test coverageReport` generates coverage reports into the directory `target/scala-<scala-version>/scoverage-report`.
+
+## Performance Tests
+[scalameter](https://scalameter.github.io/) is a Scala library which allows you to write performance tests in Scala.
+The package [performance](./src/test/scala/tdauth/futuresandpromises/performance) contains performance tests.
 
 ## API Documentation
 The API documentation can be generated with [scaladoc](https://docs.scala-lang.org/style/scaladoc.html) with the following command: `sbt doc`

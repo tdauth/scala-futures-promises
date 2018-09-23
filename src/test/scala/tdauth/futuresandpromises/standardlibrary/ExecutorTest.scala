@@ -4,5 +4,6 @@ import tdauth.futuresandpromises.AbstractExecutorTest
 import tdauth.futuresandpromises.Executor
 
 class ExecutorTest extends AbstractExecutorTest {
-  def getExecutor: Executor = new ScalaFPExecutor
+  override def getTestName: String = "ScalaFPExecutor"
+  override def getExecutor: Executor = new ScalaFPExecutor
 }

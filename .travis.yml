@@ -3,7 +3,7 @@ scala:
    - 2.12.6
 
 script:
-   - sbt clean coverage test coverageReport doc
+   - sbt clean coverage test coverageReport scalastyle doc
 
 after_success:
    - bash <(curl -s https://codecov.io/bash)

@@ -33,7 +33,6 @@ trait Util {
     class FirstNContext {
       var v: FirstNResultType[T] = Vector()
       val completed = new AtomicInteger(0)
-      val done = new AtomicBoolean(false)
       val p = factory.createPromise[FirstNResultType[T]]
     }
 
@@ -44,19 +43,22 @@ trait Util {
     } else {
       for ((f, i) <- futures.view.zipWithIndex) {
         f.onComplete((t: Try[T]) => {
-          if (!ctx.done.get) {
-            val c = ctx.completed.incrementAndGet
+          val completed = ctx.completed.incrementAndGet
 
-            if (c <= n) {
+          if (completed <= n) {
+            var vectorSize = -1
 
-              ctx.v.synchronized {
-                ctx.v = ctx.v :+ (i, t)
-              }
+            ctx.synchronized {
+              ctx.v = ctx.v :+ (i, t)
+              vectorSize = ctx.v.length
+            }
 
-              if (c == n) {
-                ctx.p.trySuccess(ctx.v)
-                ctx.done.set(true)
-              }
+            /*
+             * Compare to the actual vector size after the atomic insert operation, to prevent possible data races.
+             * Otherwise, if compared to "completed", it could complete the promise before the other insert operations are done.
+             */
+            if (vectorSize == n) {
+              ctx.p.trySuccess(ctx.v)
             }
           }
         })
@@ -73,7 +75,6 @@ trait Util {
       var v: FirstNSuccResultType[T] = Vector()
       val succeeded = new AtomicInteger(0)
       val failed = new AtomicInteger(0)
-      val done = new AtomicBoolean(false)
       val p = factory.createPromise[FirstNSuccResultType[T]]
     }
 
@@ -85,36 +86,44 @@ trait Util {
     } else {
       for ((f, i) <- futures.view.zipWithIndex) {
         f.onComplete((t: Try[T]) => {
-          if (!ctx.done.get) {
-            // ignore exceptions until as many futures failed that n futures cannot be completed successfully anymore
-            if (t.hasException) {
-              val c = ctx.failed.incrementAndGet
+
+          /*
+           * Ignore exceptions until as many futures failed that n futures cannot be completed successfully anymore.
+           * Even if a future fails after the promise has been completed and leads to completing the promise with a failure, the promise can
+           * not be completed any more (write-once semantics) and the tryFailure call simply fails.
+           * Therefore, we do not need any atomic "done" flag.
+           */
+          if (t.hasException) {
+            val completed = ctx.failed.incrementAndGet
+
+            /*
+             * Since the local variable can never have the counter incremented by more than one,
+             * we can check for the exact final value and do only one setException call.
+             */
+            if (total - completed + 1 == n) {
+              try {
+                t.get
+              } catch {
+                case NonFatal(e) => ctx.p.tryFailure(e)
+              }
+            }
+          } else {
+            val completed = ctx.succeeded.incrementAndGet
+
+            if (completed <= n) {
+              var vectorSize = -1
+
+              ctx.synchronized {
+                ctx.v = ctx.v :+ (i, t.get)
+                vectorSize = ctx.v.length
+              }
 
               /*
-               * Since the local variable can never have the counter incremented by more than one,
-               * we can check for the exact final value and do only one setException call.
+               * Compare to the actual vector size after the atomic insert operation, to prevent possible data races.
+               * Otherwise, if compared to "completed", it could complete the promise before the other insert operations are done.
                */
-              if (total - c + 1 == n) {
-                try {
-                  t.get
-                } catch {
-                  case NonFatal(e) => ctx.p.tryFailure(e)
-                }
-
-                ctx.done.set(true)
-              }
-            } else {
-              val c = ctx.succeeded.incrementAndGet
-
-              if (c <= n) {
-                ctx.v.synchronized {
-                  ctx.v = ctx.v :+ (i, t.get)
-                }
-
-                if (c == n) {
-                  ctx.p.trySuccess(ctx.v)
-                  ctx.done.set(true)
-                }
+              if (vectorSize == n) {
+                ctx.p.trySuccess(ctx.v)
               }
             }
           }

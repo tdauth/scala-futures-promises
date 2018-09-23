@@ -1,6 +1,12 @@
 package tdauth.futuresandpromises
 
 abstract class AbstractPromiseTest extends AbstractUnitSpec {
+  getTestName should "produce an empty future" in {
+    val p = getPromise[Int]
+    val f = p.future()
+    f.isReady should be(false)
+  }
+
   "trySuccess" should "should complete a future successfully" in {
     val p = getPromise[Int]
     val f = p.future()
@@ -42,6 +48,19 @@ abstract class AbstractPromiseTest extends AbstractUnitSpec {
     f.get should be(10)
   }
 
+  it should "not complete a future with the help of a failing future" in {
+    val executor = getExecutor
+    val future = getUtil.async[Int](executor, () => throw new RuntimeException("test"))
+
+    val p = getPromise[Int]
+    val f = p.future()
+    p.trySuccessWith(future)
+    future.sync
+    f.isReady should be(false)
+    p.trySuccess(11) should be(true)
+    f.get should be(11)
+  }
+
   "tryFailureWith" should "complete a future with an exception with the help of another future" in {
     val executor = getExecutor
     val future = getUtil.async[Int](executor, () => throw new RuntimeException("test"))
@@ -49,6 +68,19 @@ abstract class AbstractPromiseTest extends AbstractUnitSpec {
     val p = getPromise[Int]
     val f = p.future()
     p.tryFailureWith(future)
+    the[RuntimeException] thrownBy f.get should have message "test"
+  }
+
+  it should "not complete a future with the help of a successful future" in {
+    val executor = getExecutor
+    val future = getUtil.async(executor, () => 10)
+
+    val p = getPromise[Int]
+    val f = p.future()
+    p.tryFailureWith(future)
+    future.sync
+    f.isReady should be(false)
+    p.tryFailure(new RuntimeException("test")) should be(true)
     the[RuntimeException] thrownBy f.get should have message "test"
   }
 

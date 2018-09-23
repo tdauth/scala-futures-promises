@@ -5,6 +5,8 @@ import tdauth.futuresandpromises.standardlibrary.ScalaFPExecutor
 import tdauth.futuresandpromises.standardlibrary.ScalaFPUtil
 
 class CombinatorsTest extends AbstractUnitSpec {
+  override def getTestName: String = "Combinators"
+
   "firstSuccWithOrElse" should "complete the final future with the first one" in {
     val executor = new ScalaFPExecutor
     val f0 = ScalaFPUtil.async(executor, () => 10)

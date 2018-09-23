@@ -7,8 +7,9 @@ import tdauth.futuresandpromises.Try
 import tdauth.futuresandpromises.Util
 
 class PromiseTest extends AbstractPromiseTest {
-  def getExecutor: Executor = new ScalaFPExecutor
-  def getUtil: Util = new ScalaFPUtil
-  def getPromise[T]: Promise[T] = new ScalaFPPromise[T]
-  def getTry[T]: Try[T] = new ScalaFPTry[T]
+  override def getTestName: String = "ScalaFPPromise"
+  override def getExecutor: Executor = new ScalaFPExecutor
+  override def getUtil: Util = new ScalaFPUtil
+  override def getPromise[T]: Promise[T] = new ScalaFPPromise[T]
+  override def getTry[T]: Try[T] = new ScalaFPTry[T]
 }

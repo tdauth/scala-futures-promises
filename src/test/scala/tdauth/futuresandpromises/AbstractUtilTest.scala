@@ -1,7 +1,22 @@
 package tdauth.futuresandpromises
 
 abstract class AbstractUtilTest extends AbstractUnitSpec {
-  "firstN" should "should throw an exception" in {
+  getTestName should "just print the name" in {
+  }
+
+  "async" should "complete a future successfully" in {
+    val f = getUtil.async(getExecutor, () => 10)
+
+    f.get should be(10)
+  }
+
+  "async" should "fail a future" in {
+    val f = getUtil.async[Int](getExecutor, () => throw new RuntimeException("Failure!"))
+
+    the[RuntimeException] thrownBy f.get should have message "Failure!"
+  }
+
+  "firstN" should "throw an exception" in {
     val result = getUtil.firstN(Vector(), 3)
     the[RuntimeException] thrownBy result.get should have message "Not enough futures"
   }

@@ -5,7 +5,7 @@ import tdauth.futuresandpromises.UsingUninitializedTry
 import tdauth.futuresandpromises.standardlibrary.ScalaFPTry
 import tdauth.futuresandpromises.standardlibrary.ScalaFPTry
 
-class NonDerivedTry[T](val o: scala.Option[scala.util.Try[T]]) extends ScalaFPTry[T](o) {
+class NonDerivedTry[T](o: scala.Option[scala.util.Try[T]]) extends ScalaFPTry[T](o) {
 
   def this() = this(None)
 

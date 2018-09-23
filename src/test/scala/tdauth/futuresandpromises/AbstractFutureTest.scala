@@ -1,7 +1,7 @@
 package tdauth.futuresandpromises
 
 abstract class AbstractFutureTest extends AbstractUnitSpec {
-  "A future" should "be created asynchronously" in {
+  getTestName should "be created asynchronously" in {
     val executor = getExecutor
     val util = getUtil
     val future = util.async(executor, () => { delay(); 10 })

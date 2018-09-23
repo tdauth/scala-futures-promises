@@ -1,7 +1,7 @@
 package tdauth.futuresandpromises
 
 abstract class AbstractTryTest extends AbstractUnitSpec {
-  "A try" should "throw the exception UsingUninitializedTry" in {
+  getTestName should "throw the exception UsingUninitializedTry" in {
     val t = getTry[Int]
     t.hasException should be(false)
     t.hasValue should be(false)

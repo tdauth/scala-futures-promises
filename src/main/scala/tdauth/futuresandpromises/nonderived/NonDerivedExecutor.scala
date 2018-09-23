@@ -5,7 +5,7 @@ import scala.concurrent.ExecutionContext
 import tdauth.futuresandpromises.Executor
 import tdauth.futuresandpromises.standardlibrary.ScalaFPExecutor
 
-class NonDerivedExecutor(val executionContext: ExecutionContext) extends ScalaFPExecutor(executionContext) {
+class NonDerivedExecutor(executionContext: ExecutionContext) extends ScalaFPExecutor(executionContext) {
 
   def this() = this(ExecutionContext.global)
 }

@@ -48,9 +48,7 @@ trait Future[T] {
   def factory: Factory
 
   // Derived methods:
-  def onComplete(f: (Try[T]) => Unit): Unit = {
-    this.then(f)
-  }
+  def onComplete(f: (Try[T]) => Unit): Unit = this.then(f)
 
   /**
    * Allows to filter a future matching a user-defined condition.
@@ -72,7 +70,7 @@ trait Future[T] {
       }
 
       v
-    }: T)
+    })
   }
 
   /**
