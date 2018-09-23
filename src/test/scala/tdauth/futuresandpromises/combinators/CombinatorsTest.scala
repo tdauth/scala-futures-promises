@@ -11,7 +11,7 @@ class CombinatorsTest extends AbstractUnitSpec {
     val executor = new ScalaFPExecutor
     val f0 = ScalaFPUtil.async(executor, () => 10)
     f0.sync
-    val f1 = ScalaFPUtil.async(executor, () => { Thread.sleep(3000); 11 })
+    val f1 = ScalaFPUtil.async(executor, () => { delay; 11 })
     val f = Combinators.firstSuccWithOrElse(f0, f1)
     f.get should be(10)
   }
@@ -28,7 +28,7 @@ class CombinatorsTest extends AbstractUnitSpec {
     val executor = new ScalaFPExecutor
     val f0 = ScalaFPUtil.async[Int](executor, () => throw new RuntimeException("test 0"))
     f0.sync
-    val f1 = ScalaFPUtil.async[Int](executor, () => { Thread.sleep(3000); throw new RuntimeException("test 1") })
+    val f1 = ScalaFPUtil.async[Int](executor, () => { delay; throw new RuntimeException("test 1") })
     val f = Combinators.firstSuccWithOrElse(f0, f1)
 
     the[RuntimeException] thrownBy f.get should have message "test 1"
@@ -38,17 +38,21 @@ class CombinatorsTest extends AbstractUnitSpec {
     val executor = new ScalaFPExecutor
     val f1 = ScalaFPUtil.async[Int](executor, () => throw new RuntimeException("test 1"))
     f1.sync
-    val f0 = ScalaFPUtil.async[Int](executor, () => { Thread.sleep(3000); throw new RuntimeException("test 0") })
+    the[RuntimeException] thrownBy f1.get should have message "test 1"
+    val f0 = ScalaFPUtil.async[Int](executor, () => { delay; throw new RuntimeException("test 0") })
+    f0.isReady should be(false)
     val f = Combinators.firstSuccWithOrElse(f0, f1)
+    f0.isReady should be(false)
 
     the[RuntimeException] thrownBy f.get should have message "test 0"
+    f0.isReady should be(false)
   }
 
   "firstWithFirstN" should "complete the final future with the first one" in {
     val executor = new ScalaFPExecutor
     val f0 = ScalaFPUtil.async(executor, () => 10)
     f0.sync
-    val f1 = ScalaFPUtil.async(executor, () => { Thread.sleep(1000); 11 })
+    val f1 = ScalaFPUtil.async(executor, () => { delay; 11 })
     val f = Combinators.firstWithFirstN(f0, f1)
     f.get should be(10)
   }
@@ -57,7 +61,7 @@ class CombinatorsTest extends AbstractUnitSpec {
     val executor = new ScalaFPExecutor
     val f1 = ScalaFPUtil.async(executor, () => 11)
     f1.sync
-    val f0 = ScalaFPUtil.async(executor, () => { Thread.sleep(1000); 10 })
+    val f0 = ScalaFPUtil.async(executor, () => { delay; 10 })
     val f = Combinators.firstWithFirstN(f0, f1)
     f.get should be(11)
   }
@@ -66,7 +70,7 @@ class CombinatorsTest extends AbstractUnitSpec {
     val executor = new ScalaFPExecutor
     val f1 = ScalaFPUtil.async[Int](executor, () => throw new RuntimeException("test 1"))
     f1.sync
-    val f0 = ScalaFPUtil.async(executor, () => { Thread.sleep(1000); 10 })
+    val f0 = ScalaFPUtil.async(executor, () => { delay; 10 })
     val f = Combinators.firstWithFirstN(f0, f1)
     the[RuntimeException] thrownBy f.get should have message "test 1"
   }
@@ -75,7 +79,7 @@ class CombinatorsTest extends AbstractUnitSpec {
     val executor = new ScalaFPExecutor
     val f0 = ScalaFPUtil.async(executor, () => 10)
     f0.sync
-    val f1 = ScalaFPUtil.async(executor, () => { Thread.sleep(3000); 11 })
+    val f1 = ScalaFPUtil.async(executor, () => { delay; 11 })
     val f = Combinators.firstSuccWithFirstNSucc(f0, f1)
     f.get should be(10)
   }
@@ -92,7 +96,7 @@ class CombinatorsTest extends AbstractUnitSpec {
     val executor = new ScalaFPExecutor
     val f0 = ScalaFPUtil.async[Int](executor, () => throw new RuntimeException("test 0"))
     f0.sync
-    val f1 = ScalaFPUtil.async[Int](executor, () => { Thread.sleep(3000); throw new RuntimeException("test 1") })
+    val f1 = ScalaFPUtil.async[Int](executor, () => { delay; throw new RuntimeException("test 1") })
     val f = Combinators.firstSuccWithFirstNSucc(f0, f1)
 
     the[RuntimeException] thrownBy f.get should have message "test 1"
@@ -102,13 +106,13 @@ class CombinatorsTest extends AbstractUnitSpec {
     val executor = new ScalaFPExecutor
     val f1 = ScalaFPUtil.async[Int](executor, () => throw new RuntimeException("test 1"))
     f1.sync
-    val f0 = ScalaFPUtil.async[Int](executor, () => { Thread.sleep(3000); throw new RuntimeException("test 0") })
+    val f0 = ScalaFPUtil.async[Int](executor, () => { delay; throw new RuntimeException("test 0") })
     val f = Combinators.firstSuccWithFirstNSucc(f0, f1)
 
     the[RuntimeException] thrownBy f.get should have message "test 0"
   }
 
-  "firstNWithFirst" should "should throw an exception" in {
+  "firstNWithFirst" should "throw an exception" in {
     val result = Combinators.firstNWithFirst(Vector(), 3)
     the[RuntimeException] thrownBy result.get should have message "Not enough futures"
   }

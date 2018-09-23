@@ -2,7 +2,9 @@
 
 Advanced futures and promises API for Scala based on our paper [Advanced Futures and Promises in C++](http://www.home.hs-karlsruhe.de/~suma0002/publications/advanced-futures-promises-cpp.pdf).
 It provides an implementation based on the Scala Standard Library for futures and promises.
-The implementation with Scala should be much easier than with C++ since the garbage collection makes all shared pointers for callbacks unnecessary.
+
+
+The implementation with Scala is much easier than with C++ since the garbage collection makes all shared pointers for callbacks unnecessary.
 Besides, better abstraction is possible since the futures and promises are heap-allocated in Scala.
 Therefore, the library can provide abstract classes or traits.
 This allows real abstraction for the derived methods which can already all be implemented in the traits.
@@ -37,7 +39,7 @@ f2.onComplete((t: Try[Int]) => println(t.get()))
 ```
 
 ## Implementation based on Scala FP without Derived Methods
-There is a second implementation located in the package [nonderived](./src/main/scala/tdauth/futuresandpromises/nonderived) which is based on the first Scala FP implementation.
+There is another implementation located in the package [nonderived](./src/main/scala/tdauth/futuresandpromises/nonderived) which is based on the first Scala FP implementation.
 However, it implements all derived methods with methods which are already provided by Scala FP if it is possible.
 This implementation shows the power of Scala FP itself.
 The following combinators provided by our Advanced Futures and Promises are not directly provided by Scala FP (see <https://stackoverflow.com/questions/52408674/do-scala-futures-support-for-non-blocking-combinators-such-as-firstncompletedof>):

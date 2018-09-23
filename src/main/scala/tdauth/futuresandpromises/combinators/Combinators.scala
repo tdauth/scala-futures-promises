@@ -18,15 +18,15 @@ object Combinators {
    *
    * We need to know the failing order of the futures to rethrow the correct exception since the resulting future should fail with
    * the final failed future if both futures have failed.
-   * This is the same behaviour as in {@link Future#orElse}.
+   * This is the same behaviour as in {@link Future#firstSucc}.
    * TODO Simplify the implementation of throwing the final exception if possible.
    */
   def firstSuccWithOrElse[T](t: Future[T], other: Future[T]): Future[T] = {
     /*
-     * Stores if the first or the second future has failed finally for resolving the order in case both futures fail.
+     * Stores the exception of the first or the second future for resolving the order in case both futures fail.
      */
-    final case class CustomException(var cause: Throwable = None.orNull)
-    val ctx = CustomException(null)
+    class CustomException(var cause: Throwable = null)
+    val ctx = new CustomException
     val callback = (t: Try[T]) => {
       try {
         t.get()
@@ -43,16 +43,11 @@ object Combinators {
     val f0 = t.then(callback).orElse(other)
     val f1 = other.then(callback).orElse(t)
 
-    f0.first(f1).then((t: Try[T]) => {
-      /*
-       * Make sure to rethrow the final exception.
-       */
-      if (t.hasException) {
-        throw ctx.cause
-      }
-
-      t.get
-    })
+    /*
+     * Make sure to rethrow the final exception.
+     * Does not need synchronized since it will be the only access of ctx.
+     */
+    f0.first(f1).then((t: Try[T]) => if (ctx.cause ne null) throw ctx.cause else t.get)
   }
 
   /**
