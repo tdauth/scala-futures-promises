@@ -12,5 +12,5 @@ trait Factory {
    * This method is required by {@link Util#async} to assign the executor which is used to complete the future initially.
    * The executor should be stored to be used by the future's callback.
    */
-  def assignExecutorToFuture[T](f: Future[T], e: Executor)
+  def assignExecutorToFuture[T](f: Future[T], e: Executor) : Unit
 }

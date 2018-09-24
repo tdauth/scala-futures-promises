@@ -1,13 +1,13 @@
 package tdauth.futuresandpromises.nonderived
 
 import tdauth.futuresandpromises.Executor
+import tdauth.futuresandpromises.Factory
 import tdauth.futuresandpromises.Future
-import tdauth.futuresandpromises.Util
 import tdauth.futuresandpromises.standardlibrary.ScalaFPUtil
 
 class NonDerivedUtil extends ScalaFPUtil {
   // Basic methods:
-  override def factory = new NonDerivedFactory
+  override def factory: Factory = new NonDerivedFactory
 
   // Derived methods:
   override def async[T](ex: Executor, f: () => T): Future[T] = {
@@ -26,12 +26,4 @@ class NonDerivedUtil extends ScalaFPUtil {
    * @group firstNCombinators
    */
   override def firstNSucc[T](futures: Vector[Future[T]], n: Integer): Future[FirstNSuccResultType[T]] = super.firstNSucc(futures, n)
-}
-
-object NonDerivedUtil {
-  private val util: NonDerivedUtil = new NonDerivedUtil
-
-  def async[T](ex: Executor, f: () => T): Future[T] = util.async[T](ex, f)
-  def firstN[T](c: Vector[Future[T]], n: Integer): Future[Util#FirstNResultType[T]] = util.firstN[T](c, n)
-  def firstNSucc[T](c: Vector[Future[T]], n: Integer): Future[Util#FirstNSuccResultType[T]] = util.firstNSucc[T](c, n)
 }

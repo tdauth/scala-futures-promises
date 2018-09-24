@@ -116,6 +116,7 @@ abstract class AbstractFutureTest extends AbstractUnitSpec {
     val p0 = getPromise
     val f0 = p0.future
     p0.tryFailure(new RuntimeException("test"))
+    the[RuntimeException] thrownBy f0.get should have message "test"
     val p1 = getPromise
     val f1 = p1.future
     p1.trySuccess(11)
@@ -127,6 +128,7 @@ abstract class AbstractFutureTest extends AbstractUnitSpec {
     val p0 = getPromise
     val f0 = p0.future
     p0.tryFailure(new RuntimeException("test 0"))
+    the[RuntimeException] thrownBy f0.get should have message "test 0"
     val p1 = getPromise
     val f1 = p1.future
     val f = f0.firstSucc(f1)
@@ -138,6 +140,7 @@ abstract class AbstractFutureTest extends AbstractUnitSpec {
     val p1 = getPromise
     val f1 = p1.future
     p1.tryFailure(new RuntimeException("test 1"))
+    the[RuntimeException] thrownBy f1.get should have message "test 1"
     val p0 = getPromise
     val f0 = p0.future
     val f = f0.firstSucc(f1)
