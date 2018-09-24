@@ -10,7 +10,7 @@ import scala.util.control.NonFatal
  * Futures are first-class values which can be combined to chains of asynchronous computations which are non-blocking.
  * They can be completed by {@link Promise}.
  *
- * @todo In the C++ paper, our future has single-read and single-callback semantics. This trait does not restrict to these semantics.
+ * TODO In the C++ paper, our future has single-read and single-callback semantics. This trait does not restrict to these semantics.
  */
 trait Future[T] {
   // Basic methods:
@@ -38,12 +38,6 @@ trait Future[T] {
    * @return Returns a newly created future which is completed by the callback function at some point in time.
    */
   def then[S](f: (Try[T]) => S): Future[S]
-
-  /**
-   * Blocks until the future has been completed.
-   * This method is not really necessary but useful for testing.
-   */
-  def sync: Unit
 
   def factory: Factory
 

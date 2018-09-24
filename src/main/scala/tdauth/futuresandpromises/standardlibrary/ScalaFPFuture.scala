@@ -29,7 +29,5 @@ class ScalaFPFuture[T](val future: scala.concurrent.Future[T], var ex: ScalaFPEx
     new ScalaFPFuture[S](future.transform[S](transformCallback)(ex.executionContext), ex)
   }
 
-  override def sync: Unit = Await.ready(future, Duration.Inf)
-
   override def factory: Factory = new ScalaFPFactory
 }

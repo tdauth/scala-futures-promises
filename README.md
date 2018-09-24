@@ -49,6 +49,10 @@ The unit tests are realized with the help of [ScalaTest](http://www.scalatest.or
 See [Using ScalaTest with sbt](http://www.scalatest.org/user_guide/using_scalatest_with_sbt) for more information about how to use it with sbt.
 Use the command `sbt test` to run all unit tests.
 
+Unit tests should use executors with only one thread to keep the order always the same.
+Besides, futures should be completed with the help of promises instead of `Util.async`/submitting a function to executor, to keep the execution order the same.
+For data race detections there should be different test cases/tools.
+
 ## Coverage
 The project uses [scoverage](http://scoverage.org/) to generate coverage reports.
 It uses the plugin [sbt-scoverage](https://github.com/scoverage/sbt-scoverage).

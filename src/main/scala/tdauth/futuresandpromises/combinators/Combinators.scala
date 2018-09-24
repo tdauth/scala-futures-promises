@@ -25,7 +25,7 @@ object Combinators {
     /*
      * Stores the exception of the first or the second future for resolving the order in case both futures fail.
      */
-    class CustomException(var cause: Throwable = null)
+    class CustomException(var cause: Throwable = null, var counter: Int = 0)
     val ctx = new CustomException
     val callback = (t: Try[T]) => {
       try {
@@ -34,6 +34,7 @@ object Combinators {
         case NonFatal(x) => {
           ctx.synchronized {
             ctx.cause = x
+            ctx.counter += 1
           }
 
           throw x
@@ -47,7 +48,7 @@ object Combinators {
      * Make sure to rethrow the final exception.
      * Does not need synchronized since it will be the only access of ctx.
      */
-    f0.first(f1).then((t: Try[T]) => if (ctx.cause ne null) throw ctx.cause else t.get)
+    f0.first(f1).then((t: Try[T]) => if (ctx.counter == 2) throw ctx.cause else t.get)
   }
 
   /**

@@ -22,17 +22,7 @@ abstract class AbstractUtilTest extends AbstractUnitSpec {
   }
 
   it should "return three futures" in {
-    val executor = getExecutor
-    val futures = Vector.tabulate(3)(n => {
-      getUtil.async(executor, () => {
-        if (n % 2 == 0) {
-          n
-        } else {
-          throw new RuntimeException("test")
-        }
-      })
-    })
-
+    val futures = produceFutures(3)
     val result = getUtil.firstN(futures, 3).get
 
     result.length should be(3)
@@ -66,17 +56,7 @@ abstract class AbstractUtilTest extends AbstractUnitSpec {
   }
 
   it should "return three successful futures" in {
-    val executor = getExecutor
-    val futures = Vector.tabulate(5)(n => {
-      getUtil.async(executor, () => {
-        if (n % 2 == 0) {
-          n
-        } else {
-          throw new RuntimeException("test")
-        }
-      })
-    })
-
+    val futures = produceFutures(5)
     val result = getUtil.firstNSucc(futures, 3).get
 
     result.length should be(3)
@@ -102,20 +82,39 @@ abstract class AbstractUtilTest extends AbstractUnitSpec {
   }
 
   it should "fail with one of the futures" in {
-    val executor = getExecutor
-    val futures = Vector.tabulate(5)(n => {
-      val f = getUtil.async[Int](executor, () => {
-        throw new RuntimeException("test " + n)
-      })
-      f.sync
-      f
-    })
+    val futures = produceFailedFutures(3)
+
+    for ((f, i) <- futures.zipWithIndex) {
+      the[RuntimeException] thrownBy f.get should have message "test " + i
+    }
 
     val result = getUtil.firstNSucc(futures, 3)
 
-    the[RuntimeException] thrownBy result.get should have message "test 2"
+    the[RuntimeException] thrownBy result.get should have message "test 0"
+  }
+
+  private def produceFutures(n : Int) = {
+    Vector.tabulate(n)(n => {
+      val p = getPromise
+      if (n % 2 == 0) {
+        p.trySuccess(n)
+      } else {
+        p.tryFailure(new RuntimeException("test"))
+      }
+
+      p.future()
+    })
+  }
+
+  private def produceFailedFutures(n : Int) = {
+    Vector.tabulate(n)(n => {
+      val p = getPromise
+      p.tryFailure(new RuntimeException("test " + n))
+      p.future()
+    })
   }
 
   def getExecutor: Executor
   def getUtil: Util
+  def getPromise: Promise[Int]
 }

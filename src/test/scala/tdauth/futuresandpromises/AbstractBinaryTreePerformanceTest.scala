@@ -15,7 +15,7 @@ abstract class AbstractBinaryTreePerformanceTest extends Bench.LocalTime {
 
   protected def testCombinator(f: (FutureType, FutureType) => FutureType): Unit = {
     val r = testCombinatorRecursion(TREE_HEIGHT, f)
-    r.sync
+    r.get
   }
 
   private def testCombinatorRecursion(level: Int, f: (FutureType, FutureType) => FutureType): FutureType = {
@@ -34,7 +34,7 @@ abstract class AbstractBinaryTreePerformanceTest extends Bench.LocalTime {
 
   protected def testCombinatorFirstN(): Unit = {
     val r = testCombinatorFirstNRecursion(TREE_HEIGHT)
-    r.sync
+    r.get
   }
 
   private def testCombinatorFirstNRecursion(level: Int): Future[Util#FirstNResultType[Int]] = {
@@ -53,7 +53,7 @@ abstract class AbstractBinaryTreePerformanceTest extends Bench.LocalTime {
 
   protected def testCombinatorFirstNSucc(): Unit = {
     val r = testCombinatorFirstNSuccRecursion(TREE_HEIGHT)
-    r.sync
+    r.get
   }
 
   private def testCombinatorFirstNSuccRecursion(level: Int): Future[Util#FirstNSuccResultType[Int]] = {

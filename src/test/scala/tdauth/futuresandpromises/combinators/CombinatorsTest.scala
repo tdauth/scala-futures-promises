@@ -1,114 +1,134 @@
 package tdauth.futuresandpromises.combinators
 
+import java.util.concurrent.Executors
+
+import scala.concurrent.ExecutionContext
+
 import tdauth.futuresandpromises.AbstractUnitSpec
+import tdauth.futuresandpromises.Promise
 import tdauth.futuresandpromises.standardlibrary.ScalaFPExecutor
-import tdauth.futuresandpromises.standardlibrary.ScalaFPUtil
+import tdauth.futuresandpromises.standardlibrary.ScalaFPPromise
 
 class CombinatorsTest extends AbstractUnitSpec {
   override def getTestName: String = "Combinators"
+  def getPromise: Promise[Int] = new ScalaFPPromise[Int](executor)
+
+  private val executor = new ScalaFPExecutor(ExecutionContext.fromExecutorService(Executors.newSingleThreadExecutor()))
 
   "firstSuccWithOrElse" should "complete the final future with the first one" in {
-    val executor = new ScalaFPExecutor
-    val f0 = ScalaFPUtil.async(executor, () => 10)
-    f0.sync
-    val f1 = ScalaFPUtil.async(executor, () => { delay; 11 })
+    val p0 = getPromise
+    val f0 = p0.future()
+    p0.trySuccess(10)
+    val p1 = getPromise
+    val f1 = p1.future()
     val f = Combinators.firstSuccWithOrElse(f0, f1)
     f.get should be(10)
   }
 
   it should "complete the final future with the second one" in {
-    val executor = new ScalaFPExecutor
-    val f0 = ScalaFPUtil.async[Int](executor, () => throw new RuntimeException("test"))
-    val f1 = ScalaFPUtil.async(executor, () => 11)
+    val p0 = getPromise
+    val f0 = p0.future()
+    p0.tryFailure(new RuntimeException("test"))
+    val p1 = getPromise
+    val f1 = p1.future()
+    p1.trySuccess(11)
     val f = Combinators.firstSuccWithOrElse(f0, f1)
     f.get should be(11)
   }
 
   it should "complete with the exception of the second future" in {
-    val executor = new ScalaFPExecutor
-    val f0 = ScalaFPUtil.async[Int](executor, () => throw new RuntimeException("test 0"))
-    f0.sync
-    val f1 = ScalaFPUtil.async[Int](executor, () => { delay; throw new RuntimeException("test 1") })
+    val p0 = getPromise
+    val f0 = p0.future()
+    p0.tryFailure(new RuntimeException("test 0"))
+    val p1 = getPromise
+    val f1 = p1.future()
     val f = Combinators.firstSuccWithOrElse(f0, f1)
-
+    p1.tryFailure(new RuntimeException("test 1"))
     the[RuntimeException] thrownBy f.get should have message "test 1"
   }
 
   it should "complete with the exception of the first future" in {
-    val executor = new ScalaFPExecutor
-    val f1 = ScalaFPUtil.async[Int](executor, () => throw new RuntimeException("test 1"))
-    f1.sync
-    the[RuntimeException] thrownBy f1.get should have message "test 1"
-    val f0 = ScalaFPUtil.async[Int](executor, () => { delay; throw new RuntimeException("test 0") })
-    f0.isReady should be(false)
+    val p1 = getPromise
+    val f1 = p1.future()
+    p1.tryFailure(new RuntimeException("test 1"))
+    val p0 = getPromise
+    val f0 = p0.future()
     val f = Combinators.firstSuccWithOrElse(f0, f1)
-    f0.isReady should be(false)
-
+    p0.tryFailure(new RuntimeException("test 0"))
     the[RuntimeException] thrownBy f.get should have message "test 0"
-    f0.isReady should be(false)
   }
 
   "firstWithFirstN" should "complete the final future with the first one" in {
-    val executor = new ScalaFPExecutor
-    val f0 = ScalaFPUtil.async(executor, () => 10)
-    f0.sync
-    val f1 = ScalaFPUtil.async(executor, () => { delay; 11 })
+    val p0 = getPromise
+    val f0 = p0.future()
+    p0.trySuccess(10)
+    val p1 = getPromise
+    val f1 = p1.future()
     val f = Combinators.firstWithFirstN(f0, f1)
     f.get should be(10)
   }
 
   it should "complete the final future with the second one" in {
-    val executor = new ScalaFPExecutor
-    val f1 = ScalaFPUtil.async(executor, () => 11)
-    f1.sync
-    val f0 = ScalaFPUtil.async(executor, () => { delay; 10 })
+    val p1 = getPromise
+    val f1 = p1.future()
+    p1.trySuccess(11)
+    val p0 = getPromise
+    val f0 = p0.future()
     val f = Combinators.firstWithFirstN(f0, f1)
     f.get should be(11)
   }
 
   it should "complete the final future with the second one although it fails" in {
-    val executor = new ScalaFPExecutor
-    val f1 = ScalaFPUtil.async[Int](executor, () => throw new RuntimeException("test 1"))
-    f1.sync
-    val f0 = ScalaFPUtil.async(executor, () => { delay; 10 })
+    val p1 = getPromise
+    val f1 = p1.future()
+    p1.tryFailure(new RuntimeException("test 1"))
+    val p0 = getPromise
+    val f0 = p0.future()
     val f = Combinators.firstWithFirstN(f0, f1)
     the[RuntimeException] thrownBy f.get should have message "test 1"
   }
 
   "firstSuccWithFirstNSucc" should "complete the final future with the first one" in {
-    val executor = new ScalaFPExecutor
-    val f0 = ScalaFPUtil.async(executor, () => 10)
-    f0.sync
-    val f1 = ScalaFPUtil.async(executor, () => { delay; 11 })
+    val p0 = getPromise
+    val f0 = p0.future()
+    p0.trySuccess(10)
+    val p1 = getPromise
+    val f1 = p1.future()
+    p1.trySuccess(11)
     val f = Combinators.firstSuccWithFirstNSucc(f0, f1)
     f.get should be(10)
   }
 
   it should "complete the final future with the second one" in {
-    val executor = new ScalaFPExecutor
-    val f0 = ScalaFPUtil.async[Int](executor, () => throw new RuntimeException("test"))
-    val f1 = ScalaFPUtil.async(executor, () => 11)
+    val p0 = getPromise
+    val f0 = p0.future()
+    p0.tryFailure(new RuntimeException("test"))
+    val p1 = getPromise
+    val f1 = p1.future()
+    p1.trySuccess(11)
     val f = Combinators.firstSuccWithFirstNSucc(f0, f1)
     f.get should be(11)
   }
 
   it should "complete with the exception of the second future" in {
-    val executor = new ScalaFPExecutor
-    val f0 = ScalaFPUtil.async[Int](executor, () => throw new RuntimeException("test 0"))
-    f0.sync
-    val f1 = ScalaFPUtil.async[Int](executor, () => { delay; throw new RuntimeException("test 1") })
+    val p0 = getPromise
+    val f0 = p0.future()
+    p0.tryFailure(new RuntimeException("test 0"))
+    val p1 = getPromise
+    val f1 = p1.future()
+    p1.tryFailure(new RuntimeException("test 1"))
     val f = Combinators.firstSuccWithFirstNSucc(f0, f1)
-
     the[RuntimeException] thrownBy f.get should have message "test 1"
   }
 
   it should "complete with the exception of the first future" in {
-    val executor = new ScalaFPExecutor
-    val f1 = ScalaFPUtil.async[Int](executor, () => throw new RuntimeException("test 1"))
-    f1.sync
-    val f0 = ScalaFPUtil.async[Int](executor, () => { delay; throw new RuntimeException("test 0") })
+    val p1 = getPromise
+    val f1 = p1.future()
+    p1.tryFailure(new RuntimeException("test 1"))
+    val p0 = getPromise
+    val f0 = p0.future()
     val f = Combinators.firstSuccWithFirstNSucc(f0, f1)
-
+    p0.tryFailure(new RuntimeException("test 0"))
     the[RuntimeException] thrownBy f.get should have message "test 0"
   }
 
@@ -118,15 +138,15 @@ class CombinatorsTest extends AbstractUnitSpec {
   }
 
   it should "return three futures" in {
-    val executor = new ScalaFPExecutor
     val futures = Vector.tabulate(3)(n => {
-      ScalaFPUtil.async(executor, () => {
-        if (n % 2 == 0) {
-          n
-        } else {
-          throw new RuntimeException("test")
-        }
-      })
+      val p = getPromise
+      if (n % 2 == 0) {
+        p.trySuccess(n)
+      } else {
+        p.tryFailure(new RuntimeException("test"))
+      }
+
+      p.future()
     })
 
     val result = Combinators.firstNWithFirst(futures, 3).get

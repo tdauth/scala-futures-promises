@@ -1,15 +1,17 @@
 package tdauth.futuresandpromises.nonderived
 
+import java.util.concurrent.Executors
+
+import scala.concurrent.ExecutionContext
+
 import tdauth.futuresandpromises.AbstractPromiseTest
-import tdauth.futuresandpromises.Executor
 import tdauth.futuresandpromises.Promise
 import tdauth.futuresandpromises.Try
-import tdauth.futuresandpromises.Util
 
 class PromiseTest extends AbstractPromiseTest {
   override def getTestName: String = "NonDerivedPromise"
-  override def getExecutor: Executor = new NonDerivedExecutor
-  override def getUtil: Util = new NonDerivedUtil
-  override def getPromise[T]: Promise[T] = new NonDerivedPromise[T]
-  override def getTry[T]: Try[T] = new NonDerivedTry[T]
+  override def getPromise: Promise[Int] = new NonDerivedPromise[Int](executor)
+  override def getTry: Try[Int] = new NonDerivedTry[Int]
+
+  private val executor = new NonDerivedExecutor(ExecutionContext.fromExecutorService(Executors.newSingleThreadExecutor()))
 }
