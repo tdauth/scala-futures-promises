@@ -14,7 +14,7 @@ abstract class AbstractBinaryTreePerformanceTest extends Bench.LocalTime {
 
   val CPU_RANGES: Gen[Range] = for {
     size <- Gen.range("size")(1, 8, 1)
-  } yield 0 until size
+  } yield 1 until size
 
   protected type FutureType = Future[Int]
 
