@@ -16,39 +16,20 @@ object Combinators {
   /**
    * Uses the combinator {@link Future#orElse} instead of a promise-based implementation.
    *
+   * If both futures fail, `f0` will fail with the exception of first and `f1` will fail with the exception of `second`.
+   * Hence, it will depend on which of the two futures wins the data race to complete the promise of `first` with theit `onComplete` callback.
+   *
    * We need to know the failing order of the futures to rethrow the correct exception since the resulting future should fail with
    * the final failed future if both futures have failed.
-   * This is the same behaviour as in {@link Future#firstSucc}.
-   * TODO Simplify the implementation of throwing the final exception if possible.
+   *
+   * Note that in {@link Future#firstSucc} it is clearer that the final failing future will fail the resulting future.
+   * For example if first fails immediately and second fails after 10 seconds, the resulting future will most certainly fail with the failure of second,
+   * except first has been delayed.
    */
-  def firstSuccWithOrElse[T](t: Future[T], other: Future[T]): Future[T] = {
-    /*
-     * Stores the exception of the first or the second future for resolving the order in case both futures fail.
-     */
-    class CustomException(var cause: Throwable = null, var counter: Int = 0)
-    val ctx = new CustomException
-    val callback = (t: Try[T]) => {
-      try {
-        t.get()
-      } catch {
-        case NonFatal(x) => {
-          ctx.synchronized {
-            ctx.cause = x
-            ctx.counter += 1
-          }
-
-          throw x
-        }
-      }
-    }
-    val f0 = t.then(callback).orElse(other)
-    val f1 = other.then(callback).orElse(t)
-
-    /*
-     * Make sure to rethrow the final exception.
-     * Does not need synchronized since it will be the only access of ctx.
-     */
-    f0.first(f1).then((t: Try[T]) => if (ctx.counter == 2) throw ctx.cause else t.get)
+  def firstSuccWithOrElse[T](first: Future[T], second: Future[T]): Future[T] = {
+    val f0 = first.orElse(second)
+    val f1 = second.orElse(first)
+    f0.first(f1)
   }
 
   /**
@@ -66,6 +47,20 @@ object Combinators {
   def firstSuccWithFirstNSucc[T](t: Future[T], other: Future[T]): Future[T] = {
     ScalaFPUtil.firstNSucc[T](Vector(t, other), 1).then((t: Try[Util#FirstNSuccResultType[T]]) => {
       t.get()(0)._2
+    })
+  }
+
+  /**
+   * This implementation just shows that {@link Future#orElse} could be implemented with {@link Util#firstNSucc}.
+   * Of course the implementation based on {@link Future#then} only is much simpler.
+   */
+  def orElseWithFirstNSucc[T](first: Future[T], second: Future[T]): Future[T] = {
+    ScalaFPUtil.firstNSucc(Vector(first, second), 1).then((t: Try[Util#FirstNSuccResultType[T]]) => {
+      if (t.hasException) {
+        first.get
+      } else {
+        t.get()(0)._2
+      }
     })
   }
 
