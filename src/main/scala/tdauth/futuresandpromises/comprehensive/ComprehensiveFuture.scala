@@ -136,7 +136,7 @@ trait ComprehensiveFuture[T] extends Future[T] with Awaitable[T] {
 
   /**
    * Basically {@link #then} but passing only the successful value.
-   * Scala FP does implement this with the help of {@link #transform}.
+   * Scala FP does implement this with the help of transform and uses the map method of Try.
    */
   def map[S](f: (T) => S): Future[S] = this.then(t => f.apply(t.get()))
 

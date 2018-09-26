@@ -10,7 +10,7 @@ abstract class AbstractUtilTest extends AbstractUnitSpec {
     f.get should be(10)
   }
 
-  "async" should "fail a future" in {
+  it should "fail a future" in {
     val f = getUtil.async[Int](getExecutor, () => throw new RuntimeException("Failure!"))
 
     the[RuntimeException] thrownBy f.get should have message "Failure!"
@@ -93,7 +93,7 @@ abstract class AbstractUtilTest extends AbstractUnitSpec {
     the[RuntimeException] thrownBy result.get should have message "test 0"
   }
 
-  private def produceFutures(n : Int) = {
+  private def produceFutures(n: Int) = {
     Vector.tabulate(n)(n => {
       val p = getPromise
       if (n % 2 == 0) {
@@ -106,7 +106,7 @@ abstract class AbstractUtilTest extends AbstractUnitSpec {
     })
   }
 
-  private def produceFailedFutures(n : Int) = {
+  private def produceFailedFutures(n: Int) = {
     Vector.tabulate(n)(n => {
       val p = getPromise
       p.tryFailure(new RuntimeException("test " + n))
