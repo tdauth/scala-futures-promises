@@ -10,11 +10,9 @@ abstract class AbstractBinaryTreePerformanceTest extends Bench.LocalTime {
   protected def getUtil: Util
   protected def getExecutor: Executor
 
-  final val TREE_HEIGHT = 10
+  final val TREE_HEIGHT = 12
 
-  val CPU_RANGES: Gen[Range] = for {
-    size <- Gen.range("size")(1, 2, 1)
-  } yield 1 until size
+  val NUMBER_OF_THREADS: Gen[Int] = Gen.range("size")(1, 4, 1)
 
   protected type FutureType = Future[Int]
 

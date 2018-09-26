@@ -17,7 +17,7 @@ object Combinators {
    * Uses the combinator {@link Future#orElse} instead of a promise-based implementation.
    *
    * If both futures fail, `f0` will fail with the exception of first and `f1` will fail with the exception of `second`.
-   * Hence, it will depend on which of the two futures wins the data race to complete the promise of `first` with theit `onComplete` callback.
+   * Hence, it will depend on which of the two futures wins the data race to complete the promise of `first` with their `onComplete` callback.
    *
    * We need to know the failing order of the futures to rethrow the correct exception since the resulting future should fail with
    * the final failed future if both futures have failed.

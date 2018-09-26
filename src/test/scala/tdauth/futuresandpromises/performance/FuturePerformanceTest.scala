@@ -18,32 +18,32 @@ object FuturePerformanceTest extends AbstractBinaryTreePerformanceTest {
 
   performance of "Future" in {
     measure method "orElse" in {
-      using(CPU_RANGES) in {
-        r => testCombinator(getExecutor(r.last), _ orElse _)
+      using(NUMBER_OF_THREADS) in {
+        r => testCombinator(getExecutor(r), _ orElse _)
       }
     }
 
     measure method "first" in {
-      using(CPU_RANGES) in {
-        r => testCombinator(getExecutor(r.last), _ first _)
+      using(NUMBER_OF_THREADS) in {
+        r => testCombinator(getExecutor(r), _ first _)
       }
     }
 
     measure method "firstSucc" in {
-      using(CPU_RANGES) in {
-        r => testCombinator(getExecutor(r.last), _ firstSucc _)
+      using(NUMBER_OF_THREADS) in {
+        r => testCombinator(getExecutor(r), _ firstSucc _)
       }
     }
 
     measure method "firstN" in {
-      using(CPU_RANGES) in {
-        r => testCombinatorFirstN(getExecutor(r.last))
+      using(NUMBER_OF_THREADS) in {
+        r => testCombinatorFirstN(getExecutor(r))
       }
     }
 
     measure method "firstNSucc" in {
-      using(CPU_RANGES) in {
-        r => testCombinatorFirstNSucc(getExecutor(r.last))
+      using(NUMBER_OF_THREADS) in {
+        r => testCombinatorFirstNSucc(getExecutor(r))
       }
     }
   }

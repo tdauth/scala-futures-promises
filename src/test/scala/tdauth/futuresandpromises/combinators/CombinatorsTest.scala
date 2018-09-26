@@ -36,26 +36,30 @@ class CombinatorsTest extends AbstractUnitSpec {
     f.get should be(11)
   }
 
+  it should "complete with the exception of the first future" in {
+    val p0 = getPromise
+    val f0 = p0.future()
+    p0.tryFailure(new RuntimeException("test 0"))
+    val p1 = getPromise
+    val f1 = p1.future()
+    p1.tryFailure(new RuntimeException("test 1"))
+    // When onComplete is registered to f0, it tries to fail the promise and therefore f will fail with f0's failure.
+    val f = Combinators.firstSuccWithOrElse(f0, f1)
+
+    the[RuntimeException] thrownBy f.get should have message "test 0"
+  }
+
   it should "complete with the exception of the second future" in {
     val p0 = getPromise
     val f0 = p0.future()
     p0.tryFailure(new RuntimeException("test 0"))
     val p1 = getPromise
     val f1 = p1.future()
-    val f = Combinators.firstSuccWithOrElse(f0, f1)
     p1.tryFailure(new RuntimeException("test 1"))
-    the[RuntimeException] thrownBy f.get should have message "test 1"
-  }
+    // When onComplete is registered to f1, it tries to fail the promise and therefore f will fail with f1's failure.
+    val f = Combinators.firstSuccWithOrElse(f1, f0)
 
-  it should "complete with the exception of the first future" in {
-    val p1 = getPromise
-    val f1 = p1.future()
-    p1.tryFailure(new RuntimeException("test 1"))
-    val p0 = getPromise
-    val f0 = p0.future()
-    val f = Combinators.firstSuccWithOrElse(f0, f1)
-    p0.tryFailure(new RuntimeException("test 0"))
-    the[RuntimeException] thrownBy f.get should have message "test 0"
+    the[RuntimeException] thrownBy f.get should have message "test 1"
   }
 
   "firstWithFirstN" should "complete the final future with the first one" in {
