@@ -52,7 +52,7 @@ trait ComprehensivePromise[T] extends Promise[T] {
  * Our implementation requires a factory.
  * Hence, it has to be passed as parameter.
  * The factory could be used directly instead.
- * The object would only make sense in a concrete implementation such as the one based on Scala FP.
+ * The object would only make sense in a concrete implementation such as the one based on Scala FP where the factory would not be necessary.
  */
 object ComprehensivePromise {
 

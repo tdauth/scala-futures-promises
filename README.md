@@ -44,9 +44,8 @@ The following combinators provided by our Advanced Futures and Promises are not 
 ## Implementation of missing functionality from Scala FP
 Our Advanced Futures and Promises do not provide all functionality from Scala FP.
 The package [comprehensive](./src/main/scala/tdauth/futuresandpromises/comprehensive) adds all missing functionality and shows that our basic combinators should be enough to implement the missing functionality except for the method `Future.value` which has to stay abstract.
-The object `ComprehensivePromise` doesn't make much sense since we use the trait `Factory` for construction.
-However, it can be used with a corresponding factory.
-TODO #15 Implement the object ComprehensiveFuture and the two Awaitable methods.
+The objects `ComprehensivePromise` and `ComprehensiveFuture` don't make much sense since we use the trait `Factory` for construction.
+Therefore, a factory has to be passed to many methods.
 
 ## Combinators
 The object [Combinators](./src/main/scala/tdauth/futuresandpromises/combinators/Combinators.scala) contains different implementations of the non-blocking combinators using each other.

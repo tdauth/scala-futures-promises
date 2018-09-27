@@ -8,6 +8,8 @@ scalaVersion := "2.12.6"
 
 resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
 
+libraryDependencies += "org.scala-lang.modules" %% "scala-async" % "0.9.6"
+
 libraryDependencies += "org.scalactic" %% "scalactic" % "3.0.5"
 
 libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.5" % "test"

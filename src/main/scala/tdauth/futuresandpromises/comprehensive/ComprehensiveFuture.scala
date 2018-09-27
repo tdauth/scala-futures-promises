@@ -1,12 +1,20 @@
 package tdauth.futuresandpromises.comprehensive
 
+import java.util.concurrent.TimeoutException
+import java.util.concurrent.locks.AbstractQueuedSynchronizer
+
 import scala.concurrent.Awaitable
+import scala.concurrent.CanAwait
+import scala.concurrent.duration.Duration
 import scala.reflect.ClassTag
 import scala.util.control.NoStackTrace
 import scala.util.control.NonFatal
 
+import tdauth.futuresandpromises.Executor
+import tdauth.futuresandpromises.Factory
 import tdauth.futuresandpromises.Future
 import tdauth.futuresandpromises.Try
+import tdauth.futuresandpromises.Util
 
 /**
  * This trait provides all of our Advanced Futures and Promises functionality + all methods provided by Scala FP's Future trait.
@@ -222,8 +230,6 @@ trait ComprehensiveFuture[T] extends Future[T] with Awaitable[T] {
    */
   def zipWith[U, R](that: Future[U])(f: (T, U) => R): Future[R] = flatMap(r1 => that.asInstanceOf[ComprehensiveFuture[U]].map(r2 => f(r1, r2)))
 
-  // TODO #15 Implement the following methods from Scala FP
-
   /**
    * These two methods are inherited from the trait Awaitable.
    * Therefore, this trait would have to extend the trait Awaitable to implement these two methods.
@@ -233,9 +239,65 @@ trait ComprehensiveFuture[T] extends Future[T] with Awaitable[T] {
    * This method uses a AbstractQueuedSynchronizer from Java to synchronize the completion of the future's result.
    * The AbstractQueuedSynchronizer is adapted, so it can be a callback function for onComplete.
    * It stores the future's resulting Try[T] and calls releaseShared(1) afterwards.
+   *
+   * We can implement this the same except for an immediate check for value0 since we cannot check the current value of the future.
    */
-  //override def ready(atMost: Duration)(implicit permit: CanAwait): ComprehensiveFuture.this.type =
-  //override def result(atMost: Duration)(implicit permit: CanAwait): T
+  @throws(classOf[TimeoutException])
+  @throws(classOf[InterruptedException])
+  def ready(atMost: Duration, ex: Executor)(implicit permit: CanAwait): ComprehensiveFuture.this.type = {
+    tryAwait0(atMost)
+    this
+  }
+
+  @throws(classOf[Exception])
+  def result(atMost: Duration)(implicit permit: CanAwait): T = tryAwait0(atMost).get // returns the value, or throws the contained exception
+
+  /**
+   * Copied from Scala FP Promise object.
+   */
+  /**
+   * Latch used to implement waiting on a DefaultPromise's result.
+   *
+   * Inspired by: http://gee.cs.oswego.edu/cgi-bin/viewcvs.cgi/jsr166/src/main/java/util/concurrent/locks/AbstractQueuedSynchronizer.java
+   * Written by Doug Lea with assistance from members of JCP JSR-166
+   * Expert Group and released to the public domain, as explained at
+   * http://creativecommons.org/publicdomain/zero/1.0/
+   */
+  private final class CompletionLatch[T] extends AbstractQueuedSynchronizer with (Try[T] => Unit) {
+    //@volatie not needed since we use acquire/release
+    /*@volatile*/ private[this] var _result: Try[T] = null
+    final def result: Try[T] = _result
+    override protected def tryAcquireShared(ignored: Int): Int = if (getState != 0) 1 else -1
+    override protected def tryReleaseShared(ignore: Int): Boolean = {
+      setState(1)
+      true
+    }
+    override def apply(value: Try[T]): Unit = {
+      _result = value // This line MUST go before releaseShared
+      releaseShared(1)
+    }
+  }
+
+  private[this] final def tryAwait0(atMost: Duration): Try[T] = {
+    if (atMost ne Duration.Undefined) {
+      val r =
+        if (atMost <= Duration.Zero) null
+        else {
+          val l = new CompletionLatch[T]()
+          this.onComplete(l)
+
+          if (atMost.isFinite)
+            l.tryAcquireSharedNanos(1, atMost.toNanos)
+          else
+            l.acquireSharedInterruptibly(1)
+
+          l.result
+        }
+      if (r ne null) r
+      else throw new TimeoutException("Future timed out after [" + atMost + "]")
+
+    } else throw new IllegalArgumentException("Cannot wait for Undefined duration of time")
+  }
 
   /**
    * Copied from the Scala FP Future object.
@@ -254,6 +316,82 @@ trait ComprehensiveFuture[T] extends Future[T] with Awaitable[T] {
 
 }
 
+/**
+ * Our implementation requires a factory.
+ * Hence, it has to be passed as parameter.
+ * The factory could be used directly instead.
+ * The object would only make sense in a concrete implementation such as the one based on Scala FP where the factory would not be necessary.
+ */
 object ComprehensiveFuture {
-  // TODO #15 Implement all methods and vals
+  final def apply[T](f: Factory, body: => T): Future[T] = unit(f).asInstanceOf[ComprehensiveFuture[T]].map(_ => body)
+
+  /**
+   * Scala FP implements this the same way. Copy & paste.
+   * TODO #15 This does seem to exist in Scala 2.13.x but not in Scala 2.12.x
+   */
+  final def delegate[T](f: Factory, body: => Future[T]): Future[T] = unit(f).asInstanceOf[ComprehensiveFuture[T]].flatMap(_ => body)
+
+  final def failed[T](f: Factory, exception: Throwable): Future[T] = {
+    val p = f.createPromise[T]
+    p.tryFailure(exception)
+    p.future
+  }
+
+  /**
+   * Scala FP implements this the same way. Copy&Paste with some minor modifications.
+   */
+  final def find[T](f: Factory, futures: scala.collection.immutable.Iterable[Future[T]])(p: T => Boolean): Future[Option[T]] = {
+    def searchNext(i: Iterator[Future[T]]): Future[Option[T]] =
+      if (!i.hasNext) successful[Option[T]](f, None)
+      else {
+        i.next().asInstanceOf[ComprehensiveFuture[T]].transformWith((t) => {
+
+          try {
+            val r = t.get
+
+            if (p(r)) {
+              successful(f, Some(r))
+            } else {
+              searchNext(i)
+            }
+          } catch {
+            case NonFatal(e) => searchNext(i)
+          }
+        })
+      }
+    searchNext(futures.iterator)
+  }
+
+  /**
+   * We can simply use {@link Util#firstN} with a value of 1.
+   * Scala FP has to implement this manually.
+   */
+  final def firstCompletedOf[T](u: Util, futures: TraversableOnce[Future[T]]): Future[T] = u.firstN(futures.toVector, 1).then(t => t.get().apply(0)._2.get())
+
+  // TODO #15 Implement foldLeft
+
+  final def fromTry[T](f: Factory, result: Try[T]): Future[T] = {
+    val p = f.createPromise[T]
+    p.tryComplete(result)
+    p.future
+  }
+
+  // TODO #15 Implement reduceLeft
+  // TODO #15 Implement sequence
+
+  final def successful[T](f: Factory, result: T): Future[T] = {
+    val p = f.createPromise[T]
+    p.trySuccess(result)
+    p.future
+  }
+
+  // TODO #15 Implement traverse
+
+  /**
+   * This has to be a method here since it requires a factory, too.
+   * We have to add {@link Factory#createTry} only for this method.
+   */
+  final def unit(f: Factory): Future[Unit] = fromTry(f, f.createTry())
+
+  // TODO #15 Implement never
 }

@@ -6,6 +6,10 @@ package tdauth.futuresandpromises
  */
 trait Factory {
   def createPromise[T]: Promise[T]
+  /**
+   * This method is only required to provide {@link tdauth.futuresandpromises.comprehensive.ComprehensiveFuture#unit}.
+   */
+  def createTry() : Try[Unit]
   def createTryFromValue[T](v: T): Try[T]
   def createTryFromException[T](e: Throwable): Try[T]
   /**
