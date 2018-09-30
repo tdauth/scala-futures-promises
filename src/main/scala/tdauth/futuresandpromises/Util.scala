@@ -1,6 +1,5 @@
 package tdauth.futuresandpromises
 
-import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 
 import scala.collection.immutable.Vector
@@ -17,7 +16,7 @@ trait Util {
 
     ex.submit(() => {
       try {
-        val result = f()
+        val result = f.apply()
         p.trySuccess(result)
       } catch {
         case NonFatal(e) => p.tryFailure(e)
