@@ -2,8 +2,9 @@ package tdauth.futuresandpromises.twitter
 
 import com.twitter.util.FuturePool
 
-import tdauth.futuresandpromises.Executor
 import java.util.concurrent.ForkJoinPool
+
+import tdauth.futuresandpromises.Executor
 
 // TODO #18 Use FuturePool/ExecutorServiceFuturePool
 class TwitterExecutor(val e: java.util.concurrent.Executor) extends Executor {

@@ -9,12 +9,12 @@ trait Factory {
   /**
    * This method is only required to provide {@link tdauth.futuresandpromises.comprehensive.ComprehensiveFuture#unit}.
    */
-  def createTry() : Try[Unit]
+  def createTry(): Try[Unit]
   def createTryFromValue[T](v: T): Try[T]
   def createTryFromException[T](e: Throwable): Try[T]
   /**
    * This method is required by {@link Util#async} to assign the executor which is used to complete the future initially.
    * The executor should be stored to be used by the future's callback.
    */
-  def assignExecutorToFuture[T](f: Future[T], e: Executor) : Unit
+  def assignExecutorToFuture[T](f: Future[T], e: Executor): Unit
 }

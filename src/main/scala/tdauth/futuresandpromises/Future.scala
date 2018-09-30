@@ -54,17 +54,15 @@ trait Future[T] {
    * @param f The registered callback predicate.
    * @return Returns the filtered future.
    */
-  def guard(f: (T) => Boolean): Future[T] = {
-    return this.then[T]((t: Try[T]) => {
-      val v: T = t.get() // rethrows the exception if necessary
+  def guard(f: (T) => Boolean): Future[T] = this.then[T]((t: Try[T]) => {
+    val v: T = t.get() // rethrows the exception if necessary
 
-      if (!f.apply(v)) {
-        throw new PredicateNotFulfilled
-      }
+    if (!f.apply(v)) {
+      throw new PredicateNotFulfilled
+    }
 
-      v
-    })
-  }
+    v
+  })
 
   /**
    * Returns either the this future, or if it has failed the passed future.
@@ -73,19 +71,17 @@ trait Future[T] {
    * @param other Another future which is chosen if this future fails.
    * @return Returns the selection between both futures.
    */
-  def orElse(other: Future[T]): Future[T] = {
-    return this.then((t: Try[T]) => {
-      if (t.hasException) {
-        try {
-          other.get
-        } catch {
-          case NonFatal(x) => t.get // will rethrow if failed
-        }
-      } else {
-        t.get
+  def orElse(other: Future[T]): Future[T] = this.then((t: Try[T]) => {
+    if (t.hasException) {
+      try {
+        other.get
+      } catch {
+        case NonFatal(x) => t.get // will rethrow if failed
       }
-    })
-  }
+    } else {
+      t.get
+    }
+  })
 
   def first(other: Future[T]): Future[T] = {
     val p = factory.createPromise[T]
