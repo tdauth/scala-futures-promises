@@ -10,9 +10,7 @@ trait Util {
 
   // Derived methods:
   def async[T](ex: Executor, f: () => T): Future[T] = {
-    val p = factory.createPromise[T]
-    val result = p.future()
-    factory.assignExecutorToFuture(result, ex)
+    val p = factory.createPromise[T](ex)
 
     ex.submit(() => {
       try {
@@ -23,16 +21,16 @@ trait Util {
       }
     })
 
-    result
+    p.future()
   }
 
   type FirstNResultType[T] = Vector[Tuple2[Int, Try[T]]]
 
-  def firstN[T](futures: Vector[Future[T]], n: Integer): Future[FirstNResultType[T]] = {
+  def firstN[T](ex : Executor, futures: Vector[Future[T]], n: Integer): Future[FirstNResultType[T]] = {
     class FirstNContext {
       var v: FirstNResultType[T] = Vector()
       val completed = new AtomicInteger(0)
-      val p = factory.createPromise[FirstNResultType[T]]
+      val p = factory.createPromise[FirstNResultType[T]](ex)
     }
 
     val ctx = new FirstNContext
@@ -69,12 +67,12 @@ trait Util {
 
   type FirstNSuccResultType[T] = Vector[Tuple2[Int, T]]
 
-  def firstNSucc[T](futures: Vector[Future[T]], n: Integer): Future[FirstNSuccResultType[T]] = {
+  def firstNSucc[T](ex : Executor, futures: Vector[Future[T]], n: Integer): Future[FirstNSuccResultType[T]] = {
     class FirstNSuccContext {
       var v: FirstNSuccResultType[T] = Vector()
       val succeeded = new AtomicInteger(0)
       val failed = new AtomicInteger(0)
-      val p = factory.createPromise[FirstNSuccResultType[T]]
+      val p = factory.createPromise[FirstNSuccResultType[T]](ex)
     }
 
     val ctx = new FirstNSuccContext

@@ -28,7 +28,19 @@ trait Future[T] {
    */
   def isReady: Boolean
 
+  def onComplete(f: (Try[T]) => Unit): Unit
+
   /**
+   * Gets the current executor of the future which is important for passing it on to derived futures.
+   */
+  def getExecutor: Executor
+
+  def factory: Factory
+
+  // Derived methods:
+  /**
+   * This method is called transform in Scala FP.
+   *
    * Registers a callback function which is submitted to the future's executor when the future is completed.
    * The callback function gets the result of the future as parameter and its return value is used for the result of a new future.
    * If the callback function call throws an exception, the new resulting future is completed with the exception rather than the return value of the callback function.
@@ -36,12 +48,28 @@ trait Future[T] {
    * @param f Callback function which is executed by the same executor as this future and which gets the result of this future and of which the return value or thrown exception completes the newly created future.
    * @return Returns a newly created future which is completed by the callback function at some point in time.
    */
-  def then[S](f: (Try[T]) => S): Future[S]
+  def then[S](f: (Try[T]) => S): Future[S] = {
+    val p = factory.createPromise[S](getExecutor)
+    this.onComplete(t => {
+      try {
+        p.trySuccess(f.apply(t))
+      } catch {
+        case NonFatal(e) => p.tryFailure(e)
+      }
+    })
+    p.future()
+  }
 
-  def factory: Factory
-
-  // Derived methods:
-  def onComplete(f: (Try[T]) => Unit): Unit = this.then(f)
+  /**
+   * This method is called transformWith in Scala FP.
+   */
+  def thenWith[S](f: (Try[T]) => Future[S]): Future[S] = {
+    val p = factory.createPromise[S](getExecutor)
+    this.onComplete(t => {
+      p.tryCompleteWith(f.apply(t))
+    })
+    p.future()
+  }
 
   /**
    * Allows to filter a future matching a user-defined condition.
@@ -84,7 +112,7 @@ trait Future[T] {
   })
 
   def first(other: Future[T]): Future[T] = {
-    val p = factory.createPromise[T]
+    val p = factory.createPromise[T](getExecutor)
     p.tryCompleteWith(this)
     p.tryCompleteWith(other)
 
@@ -101,7 +129,7 @@ trait Future[T] {
    * @see {@link combinators.Combinators#firstSuccWithOrElse} for a different implementation based on {@link #orElse}.
    */
   def firstSucc(other: Future[T]): Future[T] = {
-    val p = factory.createPromise[T]
+    val p = factory.createPromise[T](getExecutor)
     /*
      * This context is required to store if both futures have failed to prevent starvation.
      */

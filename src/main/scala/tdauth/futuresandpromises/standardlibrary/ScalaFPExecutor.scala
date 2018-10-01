@@ -10,8 +10,8 @@ class ScalaFPExecutor(val executionContext: ExecutionContext) extends Executor {
 
   override def submit(f: () => Unit): Unit = {
     executionContext.execute(new Runnable() {
-      def run() {
-        f()
+      override def run() {
+        f.apply()
       }
     })
   }

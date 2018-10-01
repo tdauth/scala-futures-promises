@@ -71,7 +71,7 @@ trait ComprehensiveFuture[T] extends Future[T] with Awaitable[T] {
   }
 
   def transformWith[S](f: (Try[T]) => Future[S]): Future[S] = {
-    val p = factory.createPromise[S]
+    val p = factory.createPromise[S](getExecutor)
 
     this.onComplete(t => p.tryCompleteWith(f.apply(t)))
 
@@ -184,7 +184,7 @@ trait ComprehensiveFuture[T] extends Future[T] with Awaitable[T] {
   def recoverWith[U >: T](pf: PartialFunction[Throwable, Future[U]]): Future[U] = {
     transformWith((t: Try[T]) => {
       try {
-        val p = factory.createPromise[U]
+        val p = factory.createPromise[U](getExecutor)
         p.trySuccess(t.get)
         p.future
       } catch {
@@ -192,7 +192,7 @@ trait ComprehensiveFuture[T] extends Future[T] with Awaitable[T] {
           if (pf.isDefinedAt(x)) {
             pf.apply(x)
           } else {
-            val p = factory.createPromise[U]
+            val p = factory.createPromise[U](getExecutor)
             p.tryFailure(x)
             p.future
           }
@@ -323,16 +323,16 @@ trait ComprehensiveFuture[T] extends Future[T] with Awaitable[T] {
  * The object would only make sense in a concrete implementation such as the one based on Scala FP where the factory would not be necessary.
  */
 object ComprehensiveFuture {
-  final def apply[T](f: Factory, body: => T): Future[T] = unit(f).asInstanceOf[ComprehensiveFuture[T]].map(_ => body)
+  final def apply[T](f: Factory, ex: Executor, body: => T): Future[T] = unit(f, ex).asInstanceOf[ComprehensiveFuture[T]].map(_ => body)
 
   /**
    * Scala FP implements this the same way. Copy & paste.
    * TODO #15 This does seem to exist in Scala 2.13.x but not in Scala 2.12.x
    */
-  final def delegate[T](f: Factory, body: => Future[T]): Future[T] = unit(f).asInstanceOf[ComprehensiveFuture[T]].flatMap(_ => body)
+  final def delegate[T](f: Factory, ex: Executor, body: => Future[T]): Future[T] = unit(f, ex).asInstanceOf[ComprehensiveFuture[T]].flatMap(_ => body)
 
-  final def failed[T](f: Factory, exception: Throwable): Future[T] = {
-    val p = f.createPromise[T]
+  final def failed[T](f: Factory, ex: Executor, exception: Throwable): Future[T] = {
+    val p = f.createPromise[T](ex)
     p.tryFailure(exception)
     p.future
   }
@@ -340,9 +340,9 @@ object ComprehensiveFuture {
   /**
    * Scala FP implements this the same way. Copy&Paste with some minor modifications.
    */
-  final def find[T](f: Factory, futures: scala.collection.immutable.Iterable[Future[T]])(p: T => Boolean): Future[Option[T]] = {
+  final def find[T](f: Factory, ex: Executor, futures: scala.collection.immutable.Iterable[Future[T]])(p: T => Boolean): Future[Option[T]] = {
     def searchNext(i: Iterator[Future[T]]): Future[Option[T]] =
-      if (!i.hasNext) successful[Option[T]](f, None)
+      if (!i.hasNext) successful[Option[T]](f, ex, None)
       else {
         i.next().asInstanceOf[ComprehensiveFuture[T]].transformWith((t) => {
 
@@ -350,7 +350,7 @@ object ComprehensiveFuture {
             val r = t.get
 
             if (p(r)) {
-              successful(f, Some(r))
+              successful(f, ex, Some(r))
             } else {
               searchNext(i)
             }
@@ -366,12 +366,12 @@ object ComprehensiveFuture {
    * We can simply use {@link Util#firstN} with a value of 1.
    * Scala FP has to implement this manually.
    */
-  final def firstCompletedOf[T](u: Util, futures: TraversableOnce[Future[T]]): Future[T] = u.firstN(futures.toVector, 1).then(t => t.get().apply(0)._2.get())
+  final def firstCompletedOf[T](ex : Executor, u: Util, futures: TraversableOnce[Future[T]]): Future[T] = u.firstN(ex, futures.toVector, 1).then(t => t.get().apply(0)._2.get())
 
   // TODO #15 Implement foldLeft
 
-  final def fromTry[T](f: Factory, result: Try[T]): Future[T] = {
-    val p = f.createPromise[T]
+  final def fromTry[T](f: Factory, ex: Executor, result: Try[T]): Future[T] = {
+    val p = f.createPromise[T](ex)
     p.tryComplete(result)
     p.future
   }
@@ -379,8 +379,8 @@ object ComprehensiveFuture {
   // TODO #15 Implement reduceLeft
   // TODO #15 Implement sequence
 
-  final def successful[T](f: Factory, result: T): Future[T] = {
-    val p = f.createPromise[T]
+  final def successful[T](f: Factory, ex: Executor, result: T): Future[T] = {
+    val p = f.createPromise[T](ex)
     p.trySuccess(result)
     p.future
   }
@@ -391,7 +391,7 @@ object ComprehensiveFuture {
    * This has to be a method here since it requires a factory, too.
    * We have to add {@link Factory#createTry} only for this method.
    */
-  final def unit(f: Factory): Future[Unit] = fromTry(f, f.createTry())
+  final def unit(f: Factory, ex: Executor): Future[Unit] = fromTry(f, ex, f.createTry())
 
   // TODO #15 Implement never
 }

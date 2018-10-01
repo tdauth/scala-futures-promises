@@ -5,16 +5,15 @@ package tdauth.futuresandpromises
  * These are required for the derived methods in the traits.
  */
 trait Factory {
-  def createPromise[T]: Promise[T]
+  /**
+   * Creates a new empty promise.
+   * All futures created from the promise will inherit the executor ex.
+   */
+  def createPromise[T](ex : Executor): Promise[T]
   /**
    * This method is only required to provide {@link tdauth.futuresandpromises.comprehensive.ComprehensiveFuture#unit}.
    */
   def createTry(): Try[Unit]
   def createTryFromValue[T](v: T): Try[T]
   def createTryFromException[T](e: Throwable): Try[T]
-  /**
-   * This method is required by {@link Util#async} to assign the executor which is used to complete the future initially.
-   * The executor should be stored to be used by the future's callback.
-   */
-  def assignExecutorToFuture[T](f: Future[T], e: Executor): Unit
 }

@@ -45,12 +45,12 @@ abstract class AbstractBinaryTreePerformanceTest extends Bench.LocalTime {
       val f0 = getUtil.async(e, () => 10)
       val f1 = getUtil.async(e, () => 11)
 
-      getUtil.firstN(Vector(f0, f1), 2)
+      getUtil.firstN(e, Vector(f0, f1), 2)
     } else {
       val f0 = testCombinatorFirstNRecursion(level - 1, e)
       val f1 = testCombinatorFirstNRecursion(level - 1, e)
       val callback = (t: Try[Util#FirstNResultType[Int]]) => t.get().apply(0)._2.get
-      getUtil.firstN(Vector(f0.then(callback), f1.then(callback)), 2)
+      getUtil.firstN(e, Vector(f0.then(callback), f1.then(callback)), 2)
     }
   }
 
@@ -64,12 +64,12 @@ abstract class AbstractBinaryTreePerformanceTest extends Bench.LocalTime {
       val f0 = getUtil.async(e, () => 10)
       val f1 = getUtil.async(e, () => 11)
 
-      getUtil.firstNSucc(Vector(f0, f1), 2)
+      getUtil.firstNSucc(e, Vector(f0, f1), 2)
     } else {
       val f0 = testCombinatorFirstNSuccRecursion(level - 1, e)
       val f1 = testCombinatorFirstNSuccRecursion(level - 1, e)
       val callback = (t: Try[Util#FirstNSuccResultType[Int]]) => t.get().apply(0)._2
-      getUtil.firstNSucc(Vector(f0.then(callback), f1.then(callback)), 2)
+      getUtil.firstNSucc(e, Vector(f0.then(callback), f1.then(callback)), 2)
     }
   }
 

@@ -4,8 +4,9 @@ import tdauth.futuresandpromises.standardlibrary.ScalaFPPromise
 import tdauth.futuresandpromises.Future
 import tdauth.futuresandpromises.Factory
 import tdauth.futuresandpromises.standardlibrary.ScalaFPExecutor
+import tdauth.futuresandpromises.Executor
 
-class NonDerivedPromise[T](executor : ScalaFPExecutor = ScalaFPExecutor.global) extends ScalaFPPromise[T](executor) {
+class NonDerivedPromise[T](executor: Executor = NonDerivedExecutor.global) extends ScalaFPPromise[T](executor) {
 
   // Basic methods:
   override def future(): Future[T] = new NonDerivedFuture(promise.future, NonDerivedExecutor.global)
@@ -30,7 +31,7 @@ class NonDerivedPromise[T](executor : ScalaFPExecutor = ScalaFPExecutor.global) 
         case scala.util.Success(v) => promise.trySuccess(v)
         case scala.util.Failure(e) => {}
       }
-    })(future.ex.executionContext)
+    })(future.getExecutor.asInstanceOf[ScalaFPExecutor].executionContext)
   }
 
   /**
@@ -44,6 +45,6 @@ class NonDerivedPromise[T](executor : ScalaFPExecutor = ScalaFPExecutor.global) 
         case scala.util.Success(v) => {}
         case scala.util.Failure(e) => promise.tryFailure(e)
       }
-    })(future.ex.executionContext)
+    })(future.getExecutor.asInstanceOf[ScalaFPExecutor].executionContext)
   }
 }

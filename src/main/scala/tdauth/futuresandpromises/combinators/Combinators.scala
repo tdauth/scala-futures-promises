@@ -7,6 +7,7 @@ import tdauth.futuresandpromises.Try
 import tdauth.futuresandpromises.standardlibrary.ScalaFPPromise
 import tdauth.futuresandpromises.Util
 import tdauth.futuresandpromises.standardlibrary.ScalaFPUtil
+import tdauth.futuresandpromises.Executor
 
 /**
  * Additional implementations of the non-blocking combinators.
@@ -36,7 +37,7 @@ object Combinators {
    * Uses {@link Util#firstN} instead of a promise-based implementation.
    */
   def firstWithFirstN[T](t: Future[T], other: Future[T]): Future[T] = {
-    ScalaFPUtil.firstN[T](Vector(t, other), 1).then((t: Try[Util#FirstNResultType[T]]) => {
+    ScalaFPUtil.firstN[T](t.getExecutor, Vector(t, other), 1).then((t: Try[Util#FirstNResultType[T]]) => {
       t.get()(0)._2.get()
     })
   }
@@ -45,7 +46,7 @@ object Combinators {
    * Uses {@link Util#firstNSucc} instead of a promise-based implementation.
    */
   def firstSuccWithFirstNSucc[T](t: Future[T], other: Future[T]): Future[T] = {
-    ScalaFPUtil.firstNSucc[T](Vector(t, other), 1).then((t: Try[Util#FirstNSuccResultType[T]]) => {
+    ScalaFPUtil.firstNSucc[T](t.getExecutor, Vector(t, other), 1).then((t: Try[Util#FirstNSuccResultType[T]]) => {
       t.get()(0)._2
     })
   }
@@ -55,7 +56,7 @@ object Combinators {
    * Of course the implementation based on {@link Future#then} only is much simpler.
    */
   def orElseWithFirstNSucc[T](first: Future[T], second: Future[T]): Future[T] = {
-    ScalaFPUtil.firstNSucc(Vector(first, second), 1).then((t: Try[Util#FirstNSuccResultType[T]]) => {
+    ScalaFPUtil.firstNSucc(first.getExecutor, Vector(first, second), 1).then((t: Try[Util#FirstNSuccResultType[T]]) => {
       if (t.hasException) {
         first.get
       } else {
@@ -67,14 +68,14 @@ object Combinators {
   /**
    * The implementation is based on the following code:
    * <pre>
-   * ((f0.first(f1)).first(f2)) ... first(n)
+   * f0.first(f1.first(f2 ... first(fn)))
    * </pre>
    * This is done n times. Each time the successful future is removed from the input vector, so only the left futures can be added.
    * Therefore, the original indices have to be stored in a map and reproduced whenever a Try value is added to the resulting vector.
    *
    * Except for the error checking in the beginning, this implementation does not require the use of promises, unline {@link Util#firstN}.
    */
-  def firstNWithFirst[T](c: Vector[Future[T]], n: Integer): Future[Util#FirstNResultType[T]] = firstNWithFirstInternal[T](c, n, Vector(), (0 to c.size).map { i => (i, i) }.toMap)
+  def firstNWithFirst[T](ex: Executor, c: Vector[Future[T]], n: Integer): Future[Util#FirstNResultType[T]] = firstNWithFirstInternal[T](ex, c, n, Vector(), (0 to c.size).map { i => (i, i) }.toMap)
 
   /**
    * @param c The input futures which can still be completed.
@@ -82,18 +83,27 @@ object Combinators {
    * @param resultVector The current result vector with all already completed results.
    * @param indexMap Stores the current indices as keys and the original indices as values. This map is required for accessing the original index of a future when its Try instance is added to the result.
    */
-  private def firstNWithFirstInternal[T](c: Vector[Future[T]], n: Integer, resultVector: Util#FirstNResultType[T], indexMap: Map[Int, Int]): Future[Util#FirstNResultType[T]] = {
+  private def firstNWithFirstInternal[T](ex: Executor, c: Vector[Future[T]], n: Integer, resultVector: Util#FirstNResultType[T], indexMap: Map[Int, Int]): Future[Util#FirstNResultType[T]] = {
     if (c.size < n) {
-      val p = new ScalaFPPromise[Util#FirstNResultType[T]]()
+      val p = new ScalaFPPromise[Util#FirstNResultType[T]](ex)
       p.tryFailure(new RuntimeException("Not enough futures"))
 
       p.future()
     } else {
-      var result = c(0).then((t: Try[T]) => (0, t))
+      /**
+       * Recursively calls itself to produce the following call:
+       * <pre>
+       * f0.first(f1.first(f2 ... first(fn)))
+       * </pre>
+       */
+      def first(c: Vector[Future[T]], index: Int = 0, lastIndex: Int = c.size - 1): Future[Tuple2[Int, Try[T]]] = {
+        val h = c.head.then((t: Try[T]) => (index, t))
+        if (index < lastIndex) h.first(first(c.tail, index + 1, lastIndex)) else h
+      }
 
-      1 to c.size - 1 foreach { i => result = result.first(c(i).then((t: Try[T]) => (i, t))) }
+      var result = first(c)
 
-      result.then((t: Try[Tuple2[Int, Try[T]]]) => {
+      result.thenWith((t: Try[Tuple2[Int, Try[T]]]) => {
         val r = t.get()
         val index = r._1
         val realIndex = indexMap(index)
@@ -119,9 +129,12 @@ object Combinators {
           /*
            * Call this method recursively to add the remaining n futures.
            */
-          firstNWithFirstInternal[T](newC, n - 1, newResultVector, newIndexMap).get
+          firstNWithFirstInternal[T](ex, newC, n - 1, newResultVector, newIndexMap)
         } else {
-          newResultVector
+          val p = new ScalaFPPromise[Util#FirstNResultType[T]](ex)
+          p.trySuccess(newResultVector)
+
+          p.future()
         }
       })
     }

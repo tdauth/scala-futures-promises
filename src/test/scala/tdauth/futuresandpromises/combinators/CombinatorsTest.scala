@@ -170,7 +170,7 @@ class CombinatorsTest extends AbstractUnitSpec {
   }
 
   "firstNWithFirst" should "throw an exception" in {
-    val result = Combinators.firstNWithFirst(Vector(), 3)
+    val result = Combinators.firstNWithFirst(executor, Vector(), 3)
     the[RuntimeException] thrownBy result.get should have message "Not enough futures"
   }
 
@@ -186,7 +186,7 @@ class CombinatorsTest extends AbstractUnitSpec {
       p.future()
     })
 
-    val result = Combinators.firstNWithFirst(futures, 3).get
+    val result = Combinators.firstNWithFirst(executor, futures, 3).get
 
     result.length should be(3)
 

@@ -17,13 +17,13 @@ abstract class AbstractUtilTest extends AbstractUnitSpec {
   }
 
   "firstN" should "throw an exception" in {
-    val result = getUtil.firstN(Vector(), 3)
+    val result = getUtil.firstN(getExecutor, Vector(), 3)
     the[RuntimeException] thrownBy result.get should have message "Not enough futures"
   }
 
   it should "return three futures" in {
     val futures = produceFutures(3)
-    val result = getUtil.firstN(futures, 3).get
+    val result = getUtil.firstN(getExecutor, futures, 3).get
 
     result.length should be(3)
 
@@ -51,13 +51,13 @@ abstract class AbstractUtilTest extends AbstractUnitSpec {
   }
 
   "firstNSucc" should "throw an exception" in {
-    val result = getUtil.firstNSucc(Vector(), 3)
+    val result = getUtil.firstNSucc(getExecutor, Vector(), 3)
     the[RuntimeException] thrownBy result.get should have message "Not enough futures"
   }
 
   it should "return three successful futures" in {
     val futures = produceFutures(5)
-    val result = getUtil.firstNSucc(futures, 3).get
+    val result = getUtil.firstNSucc(getExecutor, futures, 3).get
 
     result.length should be(3)
 
@@ -88,7 +88,7 @@ abstract class AbstractUtilTest extends AbstractUnitSpec {
       the[RuntimeException] thrownBy f.get should have message "test " + i
     }
 
-    val result = getUtil.firstNSucc(futures, 3)
+    val result = getUtil.firstNSucc(getExecutor, futures, 3)
 
     the[RuntimeException] thrownBy result.get should have message "test 0"
   }

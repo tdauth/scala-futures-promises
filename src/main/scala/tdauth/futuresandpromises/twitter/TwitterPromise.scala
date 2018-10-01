@@ -7,7 +7,7 @@ import tdauth.futuresandpromises.Promise
 import tdauth.futuresandpromises.Try
 import tdauth.futuresandpromises.UsingUninitializedTry
 
-class TwitterPromise[T](val executor: Executor = TwitterExecutor.global) extends Promise[T] {
+class TwitterPromise[T](executor: Executor = TwitterExecutor.global) extends Promise[T] {
   protected val promise = com.twitter.util.Promise.apply[T]
 
   override def future(): Future[T] = new TwitterFuture[T](promise, executor)

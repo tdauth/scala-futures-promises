@@ -20,10 +20,10 @@ class NonDerivedUtil extends ScalaFPUtil {
    *
    * @group firstNCombinators
    */
-  override def firstN[T](futures: Vector[Future[T]], n: Integer): Future[FirstNResultType[T]] = super.firstN(futures, n)
+  override def firstN[T](ex : Executor, futures: Vector[Future[T]], n: Integer): Future[FirstNResultType[T]] = super.firstN(ex, futures, n)
 
   /**
    * @group firstNCombinators
    */
-  override def firstNSucc[T](futures: Vector[Future[T]], n: Integer): Future[FirstNSuccResultType[T]] = super.firstNSucc(futures, n)
+  override def firstNSucc[T](ex : Executor, futures: Vector[Future[T]], n: Integer): Future[FirstNSuccResultType[T]] = super.firstNSucc(ex, futures, n)
 }

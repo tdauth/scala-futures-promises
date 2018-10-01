@@ -2,32 +2,21 @@ package tdauth.futuresandpromises.standardlibrary
 
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
-import scala.util.control.NonFatal
 
+import tdauth.futuresandpromises.Executor
 import tdauth.futuresandpromises.Factory
 import tdauth.futuresandpromises.Future
 import tdauth.futuresandpromises.Try
 
-class ScalaFPFuture[T](val future: scala.concurrent.Future[T], var ex: ScalaFPExecutor) extends Future[T] {
+class ScalaFPFuture[T](future: scala.concurrent.Future[T], ex: Executor) extends Future[T] {
 
   override def get: T = Await.result(future, Duration.Inf)
 
   override def isReady: Boolean = future.isCompleted
 
-  override def then[S](callback: Try[T] => S): Future[S] = {
-    val transformCallback: (scala.util.Try[T]) => scala.util.Try[S] = (t: scala.util.Try[T]) => {
-      try {
-        scala.util.Success(callback(new ScalaFPTry(t)))
-      } catch {
-        case NonFatal(e) => scala.util.Failure(e)
-      }
-    }
+  override def onComplete(f: (Try[T]) => Unit): Unit = future.onComplete(t => f.apply(new ScalaFPTry(t)))(ex.asInstanceOf[ScalaFPExecutor].executionContext)
 
-    /*
-     * Use the execution context of the current executor and keep the current executor for the resulting future.
-     */
-    new ScalaFPFuture[S](future.transform[S](transformCallback)(ex.executionContext), ex)
-  }
+  override def getExecutor: Executor = ex
 
   override def factory: Factory = new ScalaFPFactory
 }

@@ -1,10 +1,14 @@
 package tdauth.futuresandpromises.memory
 
+import java.util.concurrent.Executors
+
 import scala.concurrent.Await
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.Duration
 
 import tdauth.futuresandpromises.Future
 import tdauth.futuresandpromises.comprehensive.ComprehensiveFuture
+import tdauth.futuresandpromises.standardlibrary.ScalaFPExecutor
 import tdauth.futuresandpromises.standardlibrary.ScalaFPFactory
 
 /**
@@ -19,13 +23,14 @@ import tdauth.futuresandpromises.standardlibrary.ScalaFPFactory
  */
 object Test {
   val factory = new ScalaFPFactory
+  val executor = new ScalaFPExecutor(ExecutionContext.fromExecutorService(Executors.newSingleThreadExecutor()))
 
   def main(args: Array[String]) {
     def loop(i: Int, arraySize: Int): Future[Unit] = {
       val array = new Array[Byte](arraySize)
-      ComprehensiveFuture.successful(factory, i).asInstanceOf[ComprehensiveFuture[Int]].flatMap { i =>
+      ComprehensiveFuture.successful(factory, executor, i).asInstanceOf[ComprehensiveFuture[Int]].flatMap { i =>
         if (i == 0) {
-          ComprehensiveFuture.successful(factory, ())
+          ComprehensiveFuture.successful(factory, executor, ())
         } else {
           array.size // Force closure to refer to array
           loop(i - 1, arraySize)
