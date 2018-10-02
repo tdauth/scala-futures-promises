@@ -25,6 +25,10 @@ class NonDerivedFuture[T](val future: scala.concurrent.Future[T], ex: Executor) 
     }
   })(this.ex.asInstanceOf[NonDerivedExecutor].executionContext), this.getExecutor)
 
+  override def thenWith[S](f: (Try[T]) => Future[S]): Future[S] = new NonDerivedFuture[S](future.transformWith[S]((t: scala.util.Try[T]) => {
+    f.apply(new NonDerivedTry[T](t)).asInstanceOf[NonDerivedFuture[S]].future
+  })(this.ex.asInstanceOf[NonDerivedExecutor].executionContext), this.getExecutor)
+
   override def guard(f: (T) => Boolean): Future[T] = new NonDerivedFuture[T](future.filter(f)(this.ex.asInstanceOf[NonDerivedExecutor].executionContext).recover({ case e: NoSuchElementException => throw new PredicateNotFulfilled })(this.ex.asInstanceOf[NonDerivedExecutor].executionContext), this.ex)
 
   override def orElse(other: Future[T]): Future[T] = new NonDerivedFuture[T](future.fallbackTo(other.asInstanceOf[NonDerivedFuture[T]].future), this.ex)
