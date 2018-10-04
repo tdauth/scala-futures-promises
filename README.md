@@ -31,6 +31,10 @@ Futures in Scala FP can have multiple callbacks registered and have multi-read s
 ### Usage
 This basic example shows how to create futures with the Scala FP implementation: [Example.scala](./src/main/scala/tdauth/futuresandpromises/example/Example.scala)
 
+## Implementation based on CAS
+
+## Implementation based on STM
+
 ## Implementation based on Scala FP without Derived Methods
 There is another implementation located in the package [nonderived](./src/main/scala/tdauth/futuresandpromises/nonderived) which is based on the first Scala FP implementation.
 However, it implements all derived methods with methods which are already provided by Scala FP if it is possible.

@@ -14,7 +14,7 @@ class ScalaFPFuture[T](future: scala.concurrent.Future[T], ex: Executor) extends
 
   override def isReady: Boolean = future.isCompleted
 
-  override def onComplete(f: (Try[T]) => Unit): Unit = future.onComplete(t => f.apply(new ScalaFPTry(t)))(ex.asInstanceOf[ScalaFPExecutor].executionContext)
+  override def onComplete(f: (Try[T]) => Unit): Unit = future.onComplete(t => f.apply(new Try(t)))(ex.asInstanceOf[ScalaFPExecutor].executionContext)
 
   override def getExecutor: Executor = ex
 

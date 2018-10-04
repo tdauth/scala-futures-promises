@@ -8,9 +8,9 @@ trait Promise[T] {
   def factory: Factory
 
   // Derived methods:
-  def trySuccess(v: T): Boolean = this.tryComplete(factory.createTryFromValue(v))
+  def trySuccess(v: T): Boolean = this.tryComplete(new Try(v))
 
-  def tryFailure(e: Throwable): Boolean = this.tryComplete(factory.createTryFromException(e))
+  def tryFailure(e: Throwable): Boolean = this.tryComplete(new Try(e))
 
   def tryCompleteWith(f: Future[T]): Unit = f.onComplete((t: Try[T]) => this.tryComplete(t))
 

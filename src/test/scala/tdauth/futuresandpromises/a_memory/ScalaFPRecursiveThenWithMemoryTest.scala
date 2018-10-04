@@ -1,4 +1,4 @@
-package tdauth.futuresandpromises.memory
+package tdauth.futuresandpromises.a_memory
 
 import java.util.concurrent.Executors
 

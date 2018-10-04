@@ -12,7 +12,10 @@ class TwitterFuture[T](future: com.twitter.util.Future[T], ex: Executor) extends
 
   override def isReady: Boolean = Await.isReady(future)
 
-  override def onComplete(f: (Try[T]) => Unit): Unit = future.respond(t => f.apply(new TwitterTry[T](t)))
+  override def onComplete(f: (Try[T]) => Unit): Unit = future.respond(t => {
+    val transformedTry = if (t.isReturn) { new Try[T](t.get) } else { new Try[T](t.throwable) }
+    f.apply(transformedTry)
+  })
 
   override def getExecutor: Executor = ex
 

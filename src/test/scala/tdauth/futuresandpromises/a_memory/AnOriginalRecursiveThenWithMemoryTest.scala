@@ -1,4 +1,4 @@
-package tdauth.futuresandpromises.memory
+package tdauth.futuresandpromises.a_memory
 
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -8,6 +8,8 @@ import scala.concurrent.duration.Duration
 import tdauth.futuresandpromises.AbstractUnitSpec
 
 /**
+ * Start the name with A to run this test as the first one.
+ *
  * This test uses recursive calls to Future.flatMap to create arrays whose
  *  combined size is slightly greater than the JVM heap size. A previous
  *  implementation of Future.flatMap would retain references to each array,

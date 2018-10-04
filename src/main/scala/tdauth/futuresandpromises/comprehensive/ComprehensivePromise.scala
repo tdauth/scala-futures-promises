@@ -1,10 +1,10 @@
 package tdauth.futuresandpromises.comprehensive
 
+import tdauth.futuresandpromises.Executor
 import tdauth.futuresandpromises.Factory
 import tdauth.futuresandpromises.Future
 import tdauth.futuresandpromises.Promise
 import tdauth.futuresandpromises.Try
-import tdauth.futuresandpromises.Executor
 
 /**
  * This trait provides all of our Advanced Futures and Promises functionality + all methods provided by Scala FP's Promise trait.
@@ -37,12 +37,12 @@ trait ComprehensivePromise[T] extends Promise[T] {
   /**
    * Scala FP implements this the same way. Copy & paste.
    */
-  def failure(cause: Throwable): this.type = complete(factory.createTryFromException(cause))
+  def failure(cause: Throwable): this.type = complete(new Try[T](cause))
 
   /**
    * Scala FP implements this the same way. Copy & paste.
    */
-  def success(value: T): this.type = complete(factory.createTryFromValue(value))
+  def success(value: T): this.type = complete(new Try[T](value))
 
   // tryCompleteWith is deprecated because it is the same as completeWith, so don't implement it.
 
@@ -59,9 +59,9 @@ object ComprehensivePromise {
 
   final def apply[T](f: Factory, ex: Executor): Promise[T] = f.createPromise[T](ex)
 
-  final def failed[T](f: Factory, ex: Executor, exception: Throwable): Promise[T] = fromTry(f, ex, f.createTryFromException(exception))
+  final def failed[T](f: Factory, ex: Executor, exception: Throwable): Promise[T] = fromTry(f, ex, new Try[T](exception))
 
-  final def successful[T](f: Factory, ex: Executor, result: T): Promise[T] = fromTry(f, ex, f.createTryFromValue(result))
+  final def successful[T](f: Factory, ex: Executor, result: T): Promise[T] = fromTry(f, ex, new Try[T](result))
 
   final def fromTry[T](f: Factory, ex: Executor, result: Try[T]): Promise[T] = {
     val p = apply[T](f, ex)

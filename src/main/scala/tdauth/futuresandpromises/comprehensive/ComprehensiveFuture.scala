@@ -366,7 +366,7 @@ object ComprehensiveFuture {
    * We can simply use {@link Util#firstN} with a value of 1.
    * Scala FP has to implement this manually.
    */
-  final def firstCompletedOf[T](ex : Executor, u: Util, futures: TraversableOnce[Future[T]]): Future[T] = u.firstN(ex, futures.toVector, 1).then(t => t.get().apply(0)._2.get())
+  final def firstCompletedOf[T](ex: Executor, u: Util, futures: TraversableOnce[Future[T]]): Future[T] = u.firstN(ex, futures.toVector, 1).then(t => t.get().apply(0)._2.get())
 
   // TODO #15 Implement foldLeft
 
@@ -391,7 +391,7 @@ object ComprehensiveFuture {
    * This has to be a method here since it requires a factory, too.
    * We have to add {@link Factory#createTry} only for this method.
    */
-  final def unit(f: Factory, ex: Executor): Future[Unit] = fromTry(f, ex, f.createTry())
+  final def unit(f: Factory, ex: Executor): Future[Unit] = fromTry(f, ex, new Try[Unit])
 
   // TODO #15 Implement never
 }

@@ -24,7 +24,7 @@ abstract class AbstractPromiseTest extends AbstractUnitSpec {
   "tryComplete" should "complete a future with an an empty Try" in {
     val p = getPromise
     val f = p.future()
-    p.tryComplete(getTry)
+    p.tryComplete(new Try[Int]())
     the[UsingUninitializedTry] thrownBy f.get should have message null
   }
 
@@ -88,5 +88,4 @@ abstract class AbstractPromiseTest extends AbstractUnitSpec {
   }
 
   def getPromise: Promise[Int]
-  def getTry: Try[Int]
 }

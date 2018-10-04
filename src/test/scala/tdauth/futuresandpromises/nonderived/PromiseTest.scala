@@ -11,7 +11,6 @@ import tdauth.futuresandpromises.Try
 class PromiseTest extends AbstractPromiseTest {
   override def getTestName: String = "NonDerivedPromise"
   override def getPromise: Promise[Int] = new NonDerivedPromise[Int](executor)
-  override def getTry: Try[Int] = new NonDerivedTry[Int]
 
   private val executor = new NonDerivedExecutor(ExecutionContext.fromExecutorService(Executors.newSingleThreadExecutor()))
 }
