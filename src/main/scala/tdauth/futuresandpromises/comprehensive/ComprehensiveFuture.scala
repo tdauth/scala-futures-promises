@@ -389,7 +389,6 @@ object ComprehensiveFuture {
 
   /**
    * This has to be a method here since it requires a factory, too.
-   * We have to add {@link Factory#createTry} only for this method.
    */
   final def unit(f: Factory, ex: Executor): Future[Unit] = fromTry(f, ex, new Try[Unit])
 

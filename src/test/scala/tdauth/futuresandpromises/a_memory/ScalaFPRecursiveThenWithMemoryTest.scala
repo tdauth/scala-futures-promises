@@ -9,10 +9,11 @@ import tdauth.futuresandpromises.Future
 import tdauth.futuresandpromises.standardlibrary.ScalaFPExecutor
 import tdauth.futuresandpromises.standardlibrary.ScalaFPFactory
 
-class ScalaFPRecursiveThenWithMemoryTest extends AbstractRecursiveThenWithMemoryTest {
+class ScalaFPRecursiveThenWithMemoryTest /* TODO extends #22 AbstractRecursiveThenWithMemoryTest */ {
   val factory = new ScalaFPFactory
   val executor = new ScalaFPExecutor(ExecutionContext.fromExecutorService(Executors.newSingleThreadExecutor()))
 
+  /* TODO #22
   override def getTestName: String = "ScalaFPRecursiveThenWithMemoryTest"
 
   override def getSuccessfulFuture: Future[Int] = {
@@ -20,4 +21,5 @@ class ScalaFPRecursiveThenWithMemoryTest extends AbstractRecursiveThenWithMemory
     p.trySuccess(1)
     p.future()
   }
+  */
 }

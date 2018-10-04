@@ -40,7 +40,7 @@ abstract class AbstractFutureTest extends AbstractUnitSpec {
 
   it should "complete the final future with first one over the second one with the help of orElse" in {
     val p0 = getPromise
-    val f0 = p0.future
+    val f0 = p0.future()
     val p1 = getPromise
     val f1 = p1.future()
     val f = f0.orElse(f1)
