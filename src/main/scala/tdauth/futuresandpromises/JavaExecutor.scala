@@ -7,8 +7,6 @@ import java.util.concurrent.ForkJoinPool
  */
 class JavaExecutor(val ex: java.util.concurrent.Executor) extends Executor {
 
-  def this() = this(ForkJoinPool.commonPool())
-
   override def submit(f: () => Unit): Unit = {
     ex.execute(new Runnable() {
       override def run() {
@@ -16,8 +14,4 @@ class JavaExecutor(val ex: java.util.concurrent.Executor) extends Executor {
       }
     })
   }
-}
-
-object JavaExecutor {
-  val global = new JavaExecutor
 }

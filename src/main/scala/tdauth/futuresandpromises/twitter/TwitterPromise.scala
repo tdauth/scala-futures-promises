@@ -3,15 +3,13 @@ package tdauth.futuresandpromises.twitter
 import scala.util.control.NonFatal
 
 import tdauth.futuresandpromises.Executor
-import tdauth.futuresandpromises.Factory
 import tdauth.futuresandpromises.Future
-import tdauth.futuresandpromises.JavaExecutor
 import tdauth.futuresandpromises.Promise
 import tdauth.futuresandpromises.Try
 import tdauth.futuresandpromises.UsingUninitializedTry
 
 // TODO #18 Use Twitter's FuturePool instead?
-class TwitterPromise[T](executor: Executor = JavaExecutor.global) extends Promise[T] {
+class TwitterPromise[T](executor: Executor) extends Promise[T] {
   protected val promise = com.twitter.util.Promise.apply[T]
 
   override def future(): Future[T] = new TwitterFuture[T](promise, executor)
@@ -28,7 +26,4 @@ class TwitterPromise[T](executor: Executor = JavaExecutor.global) extends Promis
       promise.updateIfEmpty(com.twitter.util.Throw(new UsingUninitializedTry))
     }
   }
-
-  override def factory: Factory = new TwitterFactory
-
 }

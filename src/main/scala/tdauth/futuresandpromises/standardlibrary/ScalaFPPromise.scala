@@ -3,7 +3,6 @@ package tdauth.futuresandpromises.standardlibrary
 import scala.util.control.NonFatal
 
 import tdauth.futuresandpromises.Executor
-import tdauth.futuresandpromises.Factory
 import tdauth.futuresandpromises.Future
 import tdauth.futuresandpromises.Promise
 import tdauth.futuresandpromises.Try
@@ -28,6 +27,4 @@ class ScalaFPPromise[T](executor: Executor = ScalaFPExecutor.global) extends Pro
       promise.tryFailure(new UsingUninitializedTry)
     }
   }
-
-  override def factory: Factory = new ScalaFPFactory
 }

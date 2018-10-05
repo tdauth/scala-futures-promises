@@ -125,8 +125,16 @@ trait Future[T] {
    */
   def orElse(other: Future[T]): Future[T] = this.thenWith(
     t => {
-      if (t.hasValue) this
-      else other.then(tt => if (tt.hasValue) tt.get() else t.get())
+      if (t.hasValue) {
+        this
+      } else {
+        other.then(tt =>
+          if (tt.hasValue) {
+            tt.get()
+          } else {
+            t.get()
+          })
+      }
     })
 
   def first(other: Future[T]): Future[T] = {

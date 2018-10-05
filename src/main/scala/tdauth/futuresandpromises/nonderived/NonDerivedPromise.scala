@@ -1,17 +1,14 @@
 package tdauth.futuresandpromises.nonderived
 
-import tdauth.futuresandpromises.standardlibrary.ScalaFPPromise
-import tdauth.futuresandpromises.Future
-import tdauth.futuresandpromises.Factory
-import tdauth.futuresandpromises.standardlibrary.ScalaFPExecutor
 import tdauth.futuresandpromises.Executor
+import tdauth.futuresandpromises.Future
+import tdauth.futuresandpromises.standardlibrary.ScalaFPExecutor
+import tdauth.futuresandpromises.standardlibrary.ScalaFPPromise
 
 class NonDerivedPromise[T](executor: Executor = NonDerivedExecutor.global) extends ScalaFPPromise[T](executor) {
 
   // Basic methods:
   override def future(): Future[T] = new NonDerivedFuture(promise.future, NonDerivedExecutor.global)
-
-  override def factory: Factory = new NonDerivedFactory
 
   // Derived methods:
   override def trySuccess(v: T): Boolean = promise.trySuccess(v)

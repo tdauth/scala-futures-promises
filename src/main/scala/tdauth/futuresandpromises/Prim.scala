@@ -17,9 +17,8 @@ trait Prim[T] {
   def getEx: Executor
   /**
    * Blocks until the future has been completed and returns the successful result value or throws the failing exception.
-   * By default this uses an MVar for its implementation.
    */
-  def getP: T = getResultWithMVar
+  def getP: T
   def isReady: Boolean
   def tryComplete(v: Try[T]): Boolean
   def onComplete(c: Callback): Unit

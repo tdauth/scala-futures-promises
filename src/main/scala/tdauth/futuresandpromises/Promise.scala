@@ -5,16 +5,14 @@ trait Promise[T] {
   def future(): Future[T]
   def tryComplete(v: Try[T]): Boolean
 
-  def factory: Factory
-
   // Derived methods:
   def trySuccess(v: T): Boolean = this.tryComplete(new Try(v))
 
   def tryFailure(e: Throwable): Boolean = this.tryComplete(new Try(e))
 
-  def tryCompleteWith(f: Future[T]): Unit = f.onComplete((t: Try[T]) => this.tryComplete(t))
+  def tryCompleteWith(f: Future[T]): Unit = f.onComplete(this.tryComplete(_))
 
-  def trySuccessWith(f: Future[T]): Unit = f.onComplete((t: Try[T]) => if (t.hasValue) { this.tryComplete(t); })
+  def trySuccessWith(f: Future[T]): Unit = f.onSuccess(this.trySuccess(_))
 
-  def tryFailureWith(f: Future[T]): Unit = f.onComplete((t: Try[T]) => if (t.hasException) { this.tryComplete(t); })
+  def tryFailureWith(f: Future[T]): Unit = f.onFailure(this.tryFailure(_))
 }
