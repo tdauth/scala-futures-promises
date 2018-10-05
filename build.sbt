@@ -10,6 +10,8 @@ resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repos
 
 libraryDependencies += "com.twitter" %% "util-collection" % "18.9.1"
 
+libraryDependencies += "org.scala-stm" %% "scala-stm" % "0.8"
+
 libraryDependencies += "org.scala-lang.modules" %% "scala-async" % "0.9.6"
 
 libraryDependencies += "org.scalactic" %% "scalactic" % "3.0.5"

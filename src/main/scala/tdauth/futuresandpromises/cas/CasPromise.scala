@@ -3,25 +3,18 @@ package tdauth.futuresandpromises.cas
 import tdauth.futuresandpromises.Executor
 import tdauth.futuresandpromises.Factory
 import tdauth.futuresandpromises.Future
+import tdauth.futuresandpromises.JavaExecutor
 import tdauth.futuresandpromises.Promise
 import tdauth.futuresandpromises.Try
 
 /**
  * @param executor This executor is passed on to created futures from the promise.
  */
-class CasPromise[T](ex: Executor = CasExecutor.global) extends Promise[T] with Future[T] {
+class CasPromise[T](ex: Executor = JavaExecutor.global) extends Promise[T] {
 
   val s = new CasSharedState[T](ex)
 
-  override def get: T = s.getResult
-
-  override def isReady: Boolean = s.isReady
-
-  override def onComplete(f: (Try[T]) => Unit): Unit = s.onComplete(f)
-
-  override def getExecutor: Executor = ex
-
-  override def future(): Future[T] = this
+  override def future(): Future[T] = new CasFuture(s, ex)
 
   override def tryComplete(v: Try[T]): Boolean = s.tryComplete(v)
 

@@ -10,6 +10,7 @@ Therefore, the library can provide abstract classes or traits.
 This allows real abstraction for the derived methods which can already all be implemented in the traits.
 Only the core methods have to be implemented by a concrete implementation.
 The trait `Factory` has to be extended for creating instances of the concrete implementations.
+Actually, we only need to have an abstract method which creates a new empty promise.
 
 
 The derived method `firstSucc` actually completes the final future with the final thrown exception if both futures fail since we cannot rely on broken promises in Scala because of the garbage collection.
@@ -32,8 +33,13 @@ Futures in Scala FP can have multiple callbacks registered and have multi-read s
 This basic example shows how to create futures with the Scala FP implementation: [Example.scala](./src/main/scala/tdauth/futuresandpromises/example/Example.scala)
 
 ## Implementation based on CAS
+The package [cas](./src/main/scala/tdauth/futuresandpromises/cas) contains a CAS-based implementation of futures and promises.
+This is similar to the original Scala FP implementation.
 
 ## Implementation based on STM
+The package [stm](./src/main/scala/tdauth/futuresandpromises/stm) contains an STM-based implementation of futures and promises.
+
+See <https://github.com/anschwar/FutureSTM> for another Scala implementation.
 
 ## Implementation based on Scala FP without Derived Methods
 There is another implementation located in the package [nonderived](./src/main/scala/tdauth/futuresandpromises/nonderived) which is based on the first Scala FP implementation.

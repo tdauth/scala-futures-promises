@@ -4,16 +4,17 @@ import java.util.concurrent.Executors
 
 import tdauth.futuresandpromises.AbstractUtilTest
 import tdauth.futuresandpromises.Executor
+import tdauth.futuresandpromises.JavaExecutor
 import tdauth.futuresandpromises.Promise
 import tdauth.futuresandpromises.Util
 
 class UtilTest extends AbstractUtilTest {
-  override def getTestName: String = "CasUtil"
+  override def getTestName: String = "CasUtilTest"
   override def getExecutor: Executor = executor
   override def getUtil: Util = new CasUtil
   override def getPromise: Promise[Int] = new CasPromise[Int](executor)
 
-  private val executor = new CasExecutor(Executors.newSingleThreadExecutor())
+  private val executor = new JavaExecutor(Executors.newSingleThreadExecutor())
 
   "CasUtil.async" should "complete a future successfully" in {
     val f = CasUtil.async(getExecutor, () => 10)
