@@ -1,11 +1,11 @@
-package tdauth.futuresandpromises.cas
+package tdauth.futuresandpromises.mvar
 
 import tdauth.futuresandpromises.Executor
 import tdauth.futuresandpromises.Factory
 import tdauth.futuresandpromises.Future
 import tdauth.futuresandpromises.Try
 
-class CasFuture[T](s: CasSharedState[T]) extends Future[T] {
+class MVarFuture[T](s: MVarSharedState[T]) extends Future[T] {
 
   override def get: T = s.getP
 
@@ -15,5 +15,5 @@ class CasFuture[T](s: CasSharedState[T]) extends Future[T] {
 
   override def getExecutor: Executor = s.getEx
 
-  override def factory: Factory = new CasFactory
+  override def factory: Factory = new MVarFactory
 }

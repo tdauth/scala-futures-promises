@@ -38,6 +38,29 @@ trait Future[T] {
   def factory: Factory
 
   // Derived methods:
+
+  def onSuccess(f: (T => Unit)) = onComplete(t => if (t.hasValue) f.apply(t.get))
+
+  def onFailure(f: (Throwable => Unit)) = onComplete(t => if (t.hasException) f.apply(t.getException.get))
+
+  /**
+   * `map` in Scala FP.
+   */
+  def followedBy[S](f: (T => S)): Future[S] = this.then(t => f.apply(t.get))
+
+  /**
+   * `flatMap` in Scala FP
+   */
+  def followedByWith[S](f: (T => Future[S])): Future[S] = thenWith(t => {
+    if (t.hasValue) {
+      f.apply(t.get())
+    } else {
+      val p = factory.createPromise[S](getExecutor)
+      p.tryFailure(t.getException.get)
+      p.future
+    }
+  })
+
   /**
    * This method is called transform in Scala FP.
    *
@@ -95,21 +118,16 @@ trait Future[T] {
   /**
    * Returns either the this future, or if it has failed the passed future.
    * If both futures fail, it fails with the exception of this future.
+   * Called `fallbackTo` in Scala FP and it is implemented in the same way.
    *
    * @param other Another future which is chosen if this future fails.
    * @return Returns the selection between both futures.
    */
-  def orElse(other: Future[T]): Future[T] = this.then((t: Try[T]) => {
-    if (t.hasException) {
-      try {
-        other.get
-      } catch {
-        case NonFatal(x) => t.get // will rethrow if failed
-      }
-    } else {
-      t.get
-    }
-  })
+  def orElse(other: Future[T]): Future[T] = this.thenWith(
+    t => {
+      if (t.hasValue) this
+      else other.then(tt => if (tt.hasValue) tt.get() else t.get())
+    })
 
   def first(other: Future[T]): Future[T] = {
     val p = factory.createPromise[T](getExecutor)

@@ -46,6 +46,7 @@ There is another implementation located in the package [nonderived](./src/main/s
 However, it implements all derived methods with methods which are already provided by Scala FP if it is possible.
 This implementation shows the power of Scala FP itself.
 The following combinators provided by our Advanced Futures and Promises are not directly provided by Scala FP (see <https://stackoverflow.com/questions/52408674/do-scala-futures-support-for-non-blocking-combinators-such-as-firstncompletedof>):
+* `Future.first` This cannot be implemented with the help of `Futures.find` and a predicate which does always return `true` since `Futures.find` searches the futures one callback by one and not concurrently.
 * `Util.firstN`
 * `Util.firstNSucc`
 * `Promise.trySuccessWith`

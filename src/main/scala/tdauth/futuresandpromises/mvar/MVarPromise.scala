@@ -1,4 +1,4 @@
-package tdauth.futuresandpromises.cas
+package tdauth.futuresandpromises.mvar
 
 import tdauth.futuresandpromises.Executor
 import tdauth.futuresandpromises.Factory
@@ -10,13 +10,13 @@ import tdauth.futuresandpromises.Try
 /**
  * @param executor This executor is passed on to created futures from the promise.
  */
-class CasPromise[T](ex: Executor = JavaExecutor.global) extends Promise[T] {
+class MVarPromise[T](ex: Executor = JavaExecutor.global) extends Promise[T] {
 
-  val s = new CasSharedState[T](ex)
+  private val s = new MVarSharedState[T](ex)
 
-  override def future(): Future[T] = new CasFuture(s)
+  override def future(): Future[T] = new MVarFuture(s)
 
   override def tryComplete(v: Try[T]): Boolean = s.tryComplete(v)
 
-  override def factory: Factory = new CasFactory
+  override def factory: Factory = new MVarFactory
 }

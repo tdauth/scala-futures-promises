@@ -2,6 +2,7 @@ package tdauth.futuresandpromises
 
 import scala.util.Failure
 import scala.util.Success
+import scala.util.control.NonFatal
 
 /**
  * Can either be empty, hold a success value or an exception.
@@ -10,13 +11,15 @@ import scala.util.Success
  */
 class Try[T](o: scala.Option[scala.util.Try[T]]) {
 
+  // Basic methods:
+
   def this() = this(None)
 
   def this(t: scala.util.Try[T]) = this(Some(t))
 
-  def this(v : T) = this(Some(Success(v)))
+  def this(v: T) = this(Some(Success(v)))
 
-  def this(e : Throwable) = this(Some(Failure(e)))
+  def this(e: Throwable) = this(Some(Failure(e)))
 
   /**
    * Gets the currently hold value of the Try.
@@ -42,6 +45,16 @@ class Try[T](o: scala.Option[scala.util.Try[T]]) {
     o match {
       case Some(t) => t.isSuccess
       case None => false
+    }
+  }
+
+  // Derived methods:
+  def getException: Option[Throwable] = {
+    try {
+      get
+      None
+    } catch {
+      case NonFatal(x) => Some(x)
     }
   }
 }

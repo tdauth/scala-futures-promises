@@ -3,36 +3,37 @@ package tdauth.futuresandpromises
 import scala.concurrent.SyncVar
 
 /**
- * Primitive trait to implement a shared state for futures and promises.
+ * Primitive set of (promise/future) features.
+ * TODO Directly extend this by the Future and implement future and promise together?
  */
 trait Prim[T] {
   type Callback = (Try[T]) => Unit
   type Callbacks = scala.collection.immutable.List[Callback]
   type Value = Either[Try[T], Callbacks]
 
-  // TODO #23 How to handle executors?
+  /**
+   * The executor is passed on the combined futures.
+   */
   def getEx: Executor
-  // TODO #23 Handle blocking value separately?
-  def getP: Value
+  /**
+   * Blocks until the future has been completed and returns the successful result value or throws the failing exception.
+   * By default this uses an MVar for its implementation.
+   */
+  def getP: T = getResultWithMVar
+  def isReady: Boolean
   def tryComplete(v: Try[T]): Boolean
   def onComplete(c: Callback): Unit
 
-  def getResult: T = {
+  /**
+   * Helper method which uses an MVar to block until the future has been completed and
+   * returns its result. Throws an exception if it has failed.
+   */
+  protected def getResultWithMVar: T = {
     val s = new CompletionSyncVar[T]
     this.onComplete(s)
-
     s.take().get()
   }
 
-  def isReady: Boolean = {
-    val s = getP
-    s match {
-      case Left(_) => true
-      case Right(_) => false
-    }
-  }
-
-  /// TODO #23 dispatch each callback separately to an executor?
   protected def dispatchCallbacks(v: Try[T], callbacks: Callbacks) = getEx.submit(() => { callbacks.foreach(c => c.apply(v)) })
 
   protected def dispatchCallback(v: Try[T], c: Callback) = dispatchCallbacks(v, List(c))
