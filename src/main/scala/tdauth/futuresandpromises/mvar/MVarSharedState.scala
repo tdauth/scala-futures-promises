@@ -1,14 +1,11 @@
 package tdauth.futuresandpromises.mvar
 
-import java.util.concurrent.atomic.AtomicReference
-
+import scala.concurrent.SyncVar
 import scala.util.Left
 
 import tdauth.futuresandpromises.Executor
-import tdauth.futuresandpromises.Try
-import scala.concurrent.duration.Duration
-import scala.concurrent.SyncVar
 import tdauth.futuresandpromises.Prim
+import tdauth.futuresandpromises.Try
 
 class MVarSharedState[T](ex: Executor) extends Prim[T] {
   type Result = SyncVar[Value]
@@ -24,18 +21,13 @@ class MVarSharedState[T](ex: Executor) extends Prim[T] {
 
   override def getP: T = {
     sig.get
-    result.take().left.get.get()
+    result.get.left.get.get()
   }
 
-  override def isReady: Boolean = {
-    val s = result.take()
-    // Put the value back.
-    result.put(s)
-    s match {
-      case Left(_) => true
-      case Right(_) => false
-    }
-  }
+  /**
+   * In Haskell we could call isEmptyMVar.
+   */
+  override def isReady: Boolean = sig.isSet
 
   override def tryComplete(v: Try[T]): Boolean = {
     val s = result.take()
