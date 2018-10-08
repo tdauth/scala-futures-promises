@@ -14,7 +14,11 @@ trait Prim[T] {
   /**
    * The executor is passed on the combined futures.
    */
-  def getEx: Executor
+  def getExecutor: Executor
+  /**
+   * Creates a new primitive with the current executor.
+   */
+  def newP[S]: Prim[S]
   /**
    * Blocks until the future has been completed and returns the successful result value or throws the failing exception.
    */
@@ -33,7 +37,7 @@ trait Prim[T] {
     s.take().get()
   }
 
-  protected def dispatchCallbacks(v: Try[T], callbacks: Callbacks) = getEx.submit(() => { callbacks.foreach(c => c.apply(v)) })
+  protected def dispatchCallbacks(v: Try[T], callbacks: Callbacks) = getExecutor.submit(() => { callbacks.foreach(c => c.apply(v)) })
 
   protected def dispatchCallback(v: Try[T], c: Callback) = dispatchCallbacks(v, List(c))
 

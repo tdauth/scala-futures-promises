@@ -8,12 +8,16 @@ import scala.concurrent.duration.Duration
 import java.util.concurrent.locks.AbstractQueuedSynchronizer
 import java.util.concurrent.TimeoutException
 import tdauth.futuresandpromises.Prim
+import tdauth.futuresandpromises.FP
+import tdauth.futuresandpromises.Prim
 
-class StmSharedState[T](ex: Executor) extends Prim[T] {
+class PrimSTM[T](ex: Executor) extends FP[T] {
 
   var result: Ref[Value] = Ref(Right(List.empty[Callback]))
 
-  override def getEx: Executor = ex
+  override def getExecutor: Executor = ex
+
+  override def newP[S]: Prim[S] = new PrimSTM[S](ex)
 
   override def getP: T = atomic { implicit txn =>
     val s = result()

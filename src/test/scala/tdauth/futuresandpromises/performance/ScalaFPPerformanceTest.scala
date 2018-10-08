@@ -10,13 +10,12 @@ import tdauth.futuresandpromises.Util
 import tdauth.futuresandpromises.standardlibrary.ScalaFPExecutor
 import tdauth.futuresandpromises.standardlibrary.ScalaFPUtil
 
-object FuturePerformanceTest extends AbstractBinaryTreePerformanceTest {
+object ScalaFPPerformanceTest extends AbstractBinaryTreePerformanceTest {
   override protected def getUtil: Util = new ScalaFPUtil
-  override protected def getExecutor: Executor = new ScalaFPExecutor
 
   def getExecutor(n: Int) = new ScalaFPExecutor(ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(n)))
 
-  performance of "Future" in {
+  performance of "ScalaFPFuture" in {
     measure method "orElse" in {
       using(NUMBER_OF_THREADS) in {
         r => testCombinator(getExecutor(r), _ orElse _)

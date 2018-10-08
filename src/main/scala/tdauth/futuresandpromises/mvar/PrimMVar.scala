@@ -4,10 +4,11 @@ import scala.concurrent.SyncVar
 import scala.util.Left
 
 import tdauth.futuresandpromises.Executor
+import tdauth.futuresandpromises.FP
 import tdauth.futuresandpromises.Prim
 import tdauth.futuresandpromises.Try
 
-class MVarSharedState[T](ex: Executor) extends Prim[T] {
+class PrimMVar[T](ex: Executor) extends FP[T] {
   type Result = SyncVar[Value]
 
   var result = new Result()
@@ -17,7 +18,9 @@ class MVarSharedState[T](ex: Executor) extends Prim[T] {
    */
   val sig = new SyncVar[Unit]
 
-  override def getEx: Executor = ex
+  override def getExecutor: Executor = ex
+
+  override def newP[S]: Prim[S] = new PrimMVar[S](ex)
 
   override def getP: T = {
     sig.get

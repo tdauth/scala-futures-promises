@@ -17,28 +17,28 @@ abstract class AbstractFutureTest extends AbstractUnitSpec {
     future.get should be(20)
   }
 
-  it should "be guarded by throwing the exception PredicateNotFulfilled" in {
+  "guard" should "throw the exception PredicateNotFulfilled" in {
     val p = getPromise
     val future = p.future.guard(_ != 10)
     p.trySuccess(10)
     the[PredicateNotFulfilled] thrownBy future.get should have message null
   }
 
-  it should "be guarded successfully by not throwing any exception" in {
+  it should "not throw any exception" in {
     val p = getPromise
     val future = p.future.guard(_ == 10)
     p.trySuccess(10)
     future.get should be(10)
   }
 
-  it should "be guarded by throwing the initial exception" in {
+  it should "throw the the initial exception" in {
     val p = getPromise
     val future = p.future.guard(_ == 10)
     p.tryFailure(new RuntimeException("test"))
     the[RuntimeException] thrownBy future.get should have message "test"
   }
 
-  it should "complete the final future with first one over the second one with the help of orElse" in {
+  "orElse" should "complete the final future with first one over the second one" in {
     val p0 = getPromise
     val f0 = p0.future()
     val p1 = getPromise
@@ -47,10 +47,9 @@ abstract class AbstractFutureTest extends AbstractUnitSpec {
     p0.trySuccess(10)
     p1.trySuccess(11)
     f.get should be(10)
-
   }
 
-  it should "complete the final future with the second one over the first one with the help of orElse" in {
+  it should "complete the final future with the second one over the first one" in {
     val p0 = getPromise
     val f0 = p0.future()
     p0.tryFailure(new RuntimeException("test"))
@@ -61,7 +60,7 @@ abstract class AbstractFutureTest extends AbstractUnitSpec {
     f.get should be(11)
   }
 
-  it should "complete the final future with the first one over the second one with the help of orElse when both are failing" in {
+  it should "complete the final future with the first one over the second one when both are failing" in {
     val p0 = getPromise
     val f0 = p0.future()
     p0.tryFailure(new RuntimeException("test 0"))

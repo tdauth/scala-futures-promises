@@ -8,7 +8,6 @@ import org.scalameter.api.Gen
  */
 abstract class AbstractBinaryTreePerformanceTest extends Bench.LocalTime {
   protected def getUtil: Util
-  protected def getExecutor: Executor
 
   final val TREE_HEIGHT = 12
 

@@ -2,13 +2,13 @@ package tdauth.futuresandpromises.cas
 
 import java.util.concurrent.Executors
 
-import tdauth.futuresandpromises.AbstractFutureTest
+import tdauth.futuresandpromises.AbstractFPTest
 import tdauth.futuresandpromises.JavaExecutor
-import tdauth.futuresandpromises.Promise
+import tdauth.futuresandpromises.FP
 
-class FutureTest extends AbstractFutureTest {
+class PrimCASTest extends AbstractFPTest {
   override def getTestName: String = "CasFutureTest"
-  override def getPromise: Promise[Int] = new CasPromise[Int](executor)
+  override def getFP: FP[Int] = new PrimCAS[Int](executor)
 
   private val executor = new JavaExecutor(Executors.newSingleThreadExecutor())
 }

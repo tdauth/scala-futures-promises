@@ -14,8 +14,7 @@ trait Util {
 
     ex.submit(() => {
       try {
-        val result = f.apply()
-        p.trySuccess(result)
+        p.trySuccess(f.apply())
       } catch {
         case NonFatal(e) => p.tryFailure(e)
       }
@@ -26,7 +25,7 @@ trait Util {
 
   type FirstNResultType[T] = Vector[Tuple2[Int, Try[T]]]
 
-  def firstN[T](ex : Executor, futures: Vector[Future[T]], n: Integer): Future[FirstNResultType[T]] = {
+  def firstN[T](ex: Executor, futures: Vector[Future[T]], n: Integer): Future[FirstNResultType[T]] = {
     class FirstNContext {
       var v: FirstNResultType[T] = Vector()
       val completed = new AtomicInteger(0)
@@ -67,7 +66,7 @@ trait Util {
 
   type FirstNSuccResultType[T] = Vector[Tuple2[Int, T]]
 
-  def firstNSucc[T](ex : Executor, futures: Vector[Future[T]], n: Integer): Future[FirstNSuccResultType[T]] = {
+  def firstNSucc[T](ex: Executor, futures: Vector[Future[T]], n: Integer): Future[FirstNSuccResultType[T]] = {
     class FirstNSuccContext {
       var v: FirstNSuccResultType[T] = Vector()
       val succeeded = new AtomicInteger(0)

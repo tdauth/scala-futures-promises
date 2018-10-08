@@ -52,12 +52,14 @@ trait Future[T] {
    * `flatMap` in Scala FP
    */
   def followedByWith[S](f: (T => Future[S])): Future[S] = thenWith(t => {
-    if (t.hasValue) {
+    try {
       f.apply(t.get())
-    } else {
-      val p = factory.createPromise[S](getExecutor)
-      p.tryFailure(t.getException.get)
-      p.future
+    } catch {
+      case NonFatal(x) => {
+        val p = factory.createPromise[S](getExecutor)
+        p.tryFailure(x)
+        p.future
+      }
     }
   })
 

@@ -52,13 +52,6 @@ abstract class AbstractPromiseTest extends AbstractUnitSpec {
     f.get should be(10)
   }
 
-  it should "complete a future with an an empty Try" in {
-    val p = getPromise
-    val f = p.future()
-    p.tryComplete(new Try[Int]())
-    the[UsingUninitializedTry] thrownBy f.get should have message null
-  }
-
   "tryCompleteWith" should "complete a future with the help of another future" in {
     val p0 = getPromise
     val future = p0.future()

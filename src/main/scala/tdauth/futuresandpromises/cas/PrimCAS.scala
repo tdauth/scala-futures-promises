@@ -5,22 +5,23 @@ import java.util.concurrent.atomic.AtomicReference
 import scala.util.Left
 
 import tdauth.futuresandpromises.Executor
+import tdauth.futuresandpromises.FP
 import tdauth.futuresandpromises.Prim
 import tdauth.futuresandpromises.Try
 
 /**
- * CAS-based shared state.
- *
  * Stores either a result of a future when the future has been completed or the list of callbacks.
  * Thread-safety by CAS operations.
  * This is similiar to Scala FP's implementation.
  */
-class CasSharedState[T](ex: Executor) extends Prim[T] {
+class PrimCAS[T](ex: Executor) extends FP[T] {
   type Result = AtomicReference[Value]
 
   var result = new Result(Right(List.empty[Callback]))
 
-  override def getEx: Executor = ex
+  override def getExecutor: Executor = ex
+
+  override def newP[S]: Prim[S] = new PrimCAS[S](ex)
 
   override def getP: T = getResultWithMVar
 
@@ -32,7 +33,7 @@ class CasSharedState[T](ex: Executor) extends Prim[T] {
     }
   }
 
-  // TODO Optimize recursive call?
+  // TODO #25 Optimize recursive call?
   override def tryComplete(v: Try[T]): Boolean = {
     val s = result.get
     s match {
@@ -48,7 +49,7 @@ class CasSharedState[T](ex: Executor) extends Prim[T] {
     }
   }
 
-  // TODO Optimize recursive call?
+  // TODO #25 Optimize recursive call?
   override def onComplete(c: Callback): Unit = {
     val s = result.get
     s match {

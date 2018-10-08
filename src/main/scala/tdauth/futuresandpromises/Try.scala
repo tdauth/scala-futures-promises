@@ -5,48 +5,31 @@ import scala.util.Success
 import scala.util.control.NonFatal
 
 /**
- * Can either be empty, hold a success value or an exception.
- * This is different from Scala's [[https://www.scala-lang.org/api/current/scala/util/Try.html scala.util.Try]] which cannot be empty
- *  and more like Folly's [[https://github.com/facebook/folly/blob/master/folly/Try.h Try]].
+ * Can either hold a successful result value or an exception.
+ * This is similiar to [[https://www.scala-lang.org/api/current/scala/util/Try.html Scala FP's Try] and
+ * [[https://twitter.github.io/util/docs/com/twitter/util/Try.html Twitter's Try]].
+ * In Folly it can be empty, too: [[https://github.com/facebook/folly/blob/master/folly/Try.h Try]] but this is not
+ * possible in Scala.
+ * This is because it is directly used as the result value of a future in Folly instead of nesting it in an optional value.
+ * See the field `result_` in Folly's [[https://raw.githubusercontent.com/facebook/folly/master/folly/futures/detail/Core.h Core.h]].
  */
-class Try[T](o: scala.Option[scala.util.Try[T]]) {
+class Try[T](t: scala.util.Try[T]) {
 
   // Basic methods:
+  def this(v: T) = this(Success(v))
 
-  def this() = this(None)
-
-  def this(t: scala.util.Try[T]) = this(Some(t))
-
-  def this(v: T) = this(Some(Success(v)))
-
-  def this(e: Throwable) = this(Some(Failure(e)))
+  def this(e: Throwable) = this(Failure(e))
 
   /**
    * Gets the currently hold value of the Try.
    * @return Returns the currently hold value of the Try. If it has an exception, the exception is rethrown.
    * @throws UsingUninitializedTry If there is neither a result value nor an exception, this exception will be thrown.
    */
-  def get(): T = {
-    o match {
-      case Some(t) => t.get
-      case None => throw new UsingUninitializedTry
-    }
-  }
+  def get(): T = t.get
 
-  def hasException: Boolean = {
-    o match {
-      case Some(t) => t.isFailure
-      case None => false
-    }
+  def hasException: Boolean = t.isFailure
 
-  }
-
-  def hasValue: Boolean = {
-    o match {
-      case Some(t) => t.isSuccess
-      case None => false
-    }
-  }
+  def hasValue: Boolean = t.isSuccess
 
   // Derived methods:
   def getException: Option[Throwable] = {
