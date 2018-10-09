@@ -18,7 +18,7 @@ trait Prim[T] {
   /**
    * Creates a new primitive with the current executor.
    */
-  def newP[S]: Prim[S]
+  def newP[S](ex : Executor): Prim[S]
   /**
    * Blocks until the future has been completed and returns the successful result value or throws the failing exception.
    */

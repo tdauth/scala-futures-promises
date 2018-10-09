@@ -37,9 +37,10 @@ import scala.util.control.NonFatal
  */
 trait FP[T] extends Prim[T] {
   // Basic construction methods:
-  def newFP[S]: FP[S] = newP[S].asInstanceOf[FP[S]]
+  def newFP[S](ex : Executor): FP[S] = newP[S](ex).asInstanceOf[FP[S]]
 
   // Basic promise methods:
+  // TODO #25 Haskell does not have executors
   // getExecutor is inherited by Prim[T]
   def tryComplete(t: Try[T]): Boolean
 
@@ -61,7 +62,7 @@ trait FP[T] extends Prim[T] {
   // Derived future methods:
   // TODO #25 async? static method?
   def future[S](f: () => S): FP[S] = {
-    val p = newFP[S]
+    val p = newFP[S](getExecutor)
     getExecutor.submit(() => {
       try {
         p.trySuccess(f.apply())
@@ -77,7 +78,7 @@ trait FP[T] extends Prim[T] {
   // TODO #25 What about transform and transformWith? orAlt requires this and followedBy and followedbyWith can be derived?
   // TODO #25 In Scala FP transform and transformWith return Try[T] and not T. Mention that!
   def transform[S](f: Try[T] => S): FP[S] = {
-    val p = newFP[S]
+    val p = newFP[S](getExecutor)
     onComplete(t => {
       try {
         p.trySuccess(f.apply(t))
@@ -89,7 +90,7 @@ trait FP[T] extends Prim[T] {
   }
 
   def transformWith[S](f: Try[T] => FP[S]): FP[S] = {
-    val p = newFP[S]
+    val p = newFP[S](getExecutor)
     onComplete(t => p.tryCompleteWith(f.apply(t)))
     p
   }
@@ -99,7 +100,7 @@ trait FP[T] extends Prim[T] {
       f.apply(t.get)
     } catch {
       case NonFatal(x) => {
-        val p = newFP[S]
+        val p = newFP[S](getExecutor)
         p.tryFail(x)
         p
       }
@@ -125,14 +126,14 @@ trait FP[T] extends Prim[T] {
     }))
 
   def first(other: FP[T]): FP[T] = {
-    val p = newFP[T]
+    val p = newFP[T](getExecutor)
     p.tryCompleteWith(this)
     p.tryCompleteWith(other)
 
     p
   }
   def firstSucc(other: FP[T]): FP[T] = {
-    val p = newFP[T]
+    val p = newFP[T](getExecutor)
     /*
      * This context is required to store if both futures have failed to prevent starvation.
      */

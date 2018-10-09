@@ -17,7 +17,7 @@ class PrimSTM[T](ex: Executor) extends FP[T] {
 
   override def getExecutor: Executor = ex
 
-  override def newP[S]: Prim[S] = new PrimSTM[S](ex)
+  override def newP[S](ex : Executor): Prim[S] = new PrimSTM[S](ex)
 
   override def getP: T = atomic { implicit txn =>
     val s = result()

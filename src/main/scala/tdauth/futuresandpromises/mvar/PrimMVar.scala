@@ -20,7 +20,7 @@ class PrimMVar[T](ex: Executor) extends FP[T] {
 
   override def getExecutor: Executor = ex
 
-  override def newP[S]: Prim[S] = new PrimMVar[S](ex)
+  override def newP[S](ex: Executor): Prim[S] = new PrimMVar[S](ex)
 
   override def getP: T = {
     sig.get

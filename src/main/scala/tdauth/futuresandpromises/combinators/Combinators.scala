@@ -58,6 +58,7 @@ object Combinators {
   def orElseWithFirstNSucc[T](first: Future[T], second: Future[T]): Future[T] = {
     ScalaFPUtil.firstNSucc(first.getExecutor, Vector(first, second), 1).then((t: Try[Util#FirstNSuccResultType[T]]) => {
       if (t.hasException) {
+        // TODO #27 Never use get in a callback?
         first.get
       } else {
         t.get()(0)._2

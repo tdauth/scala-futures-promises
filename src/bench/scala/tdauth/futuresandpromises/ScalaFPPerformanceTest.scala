@@ -1,12 +1,7 @@
-package tdauth.futuresandpromises.performance;
+package tdauth.futuresandpromises
 
 import java.util.concurrent.Executors
-
 import scala.concurrent.ExecutionContext
-
-import tdauth.futuresandpromises.AbstractBinaryTreePerformanceTest
-import tdauth.futuresandpromises.Executor
-import tdauth.futuresandpromises.Util
 import tdauth.futuresandpromises.standardlibrary.ScalaFPExecutor
 import tdauth.futuresandpromises.standardlibrary.ScalaFPUtil
 

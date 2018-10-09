@@ -2,6 +2,7 @@ package tdauth.futuresandpromises
 
 import org.scalameter.api.Bench
 import org.scalameter.api.Gen
+import scala.Vector
 
 /**
  * Creates a binary tree with a height of {@link #TREE_HEIGHT} where each leaf is the call of a non-blocking combinator with two futures.
