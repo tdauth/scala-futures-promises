@@ -18,7 +18,7 @@ trait Prim[T] {
   /**
    * Creates a new primitive with the current executor.
    */
-  def newP[S](ex : Executor): Prim[S]
+  def newP[S](ex: Executor): Prim[S]
   /**
    * Blocks until the future has been completed and returns the successful result value or throws the failing exception.
    */
@@ -37,7 +37,7 @@ trait Prim[T] {
     s.take().get()
   }
 
-  protected def dispatchCallbacks(v: Try[T], callbacks: Callbacks) = getExecutor.submit(() => { callbacks.foreach(c => c.apply(v)) })
+  protected def dispatchCallbacks(v: Try[T], callbacks: Callbacks) = if (!callbacks.isEmpty) getExecutor.submit(() => { callbacks.foreach(c => c.apply(v)) })
 
   protected def dispatchCallback(v: Try[T], c: Callback) = dispatchCallbacks(v, List(c))
 
@@ -46,8 +46,6 @@ trait Prim[T] {
    * TODO #23 But does it allow interrupts? Is it necessary to allow them?
    */
   private final class CompletionSyncVar[T] extends SyncVar[Try[T]] with (Try[T] => Unit) {
-    override def apply(value: Try[T]): Unit = {
-      put(value)
-    }
+    override def apply(value: Try[T]) = put(value)
   }
 }

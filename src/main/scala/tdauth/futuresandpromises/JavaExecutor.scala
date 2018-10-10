@@ -5,7 +5,7 @@ import java.util.concurrent.ForkJoinPool
 /**
  * Executor based on a Java executor.
  */
-class JavaExecutor(val ex: java.util.concurrent.Executor) extends Executor {
+class JavaExecutor(val ex: java.util.concurrent.ExecutorService) extends Executor {
 
   override def submit(f: () => Unit): Unit = {
     ex.execute(new Runnable() {
@@ -14,4 +14,6 @@ class JavaExecutor(val ex: java.util.concurrent.Executor) extends Executor {
       }
     })
   }
+
+  override def shutdown(): Unit = ex.shutdownNow()
 }

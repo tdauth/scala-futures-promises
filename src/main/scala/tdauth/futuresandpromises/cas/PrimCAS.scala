@@ -56,9 +56,7 @@ class PrimCAS[T](ex: Executor) extends FP[T] {
       case Left(x) => dispatchCallback(x, c)
       case Right(x) => {
         val callbacks = x :+ c
-        if (!result.compareAndSet(s, Right(callbacks))) {
-          onComplete(c)
-        }
+        if (!result.compareAndSet(s, Right(callbacks))) onComplete(c)
       }
     }
   }
