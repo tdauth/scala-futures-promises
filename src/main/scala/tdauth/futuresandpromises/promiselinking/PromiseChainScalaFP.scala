@@ -1,17 +1,11 @@
-package tdauth.futuresandpromises.memory
+package tdauth.futuresandpromises.promiselinking
 
 import scala.concurrent.Await
 import scala.concurrent.Promise
 import scala.concurrent.duration.Duration
 
-/**
- * Since it seems that the memory consumption by callbacks has been fixed and the benchmark from Scala FP does not work anymore,
- * we have to produce our own example based on the answer in [[https://users.scala-lang.org/t/how-does-promise-linking-work/3326/4]].
- *
- * This produces a `java.lang.OutOfMemoryError: Java heap space` when no promise linking is implemented.
- */
 // TODO #22 Actually this should inherit the DefaultPromise! Otherwise, it might get released since we only need its field p!
-class EndlessChainPrimScalaFP(arraySize: Int) {
+class PromiseChainScalaFP(arraySize: Int) {
   val p = Promise.apply[Unit]
   val array = new Array[Byte](arraySize)
 
@@ -21,16 +15,16 @@ class EndlessChainPrimScalaFP(arraySize: Int) {
   }
 }
 
-object EndlessChainPrimScalaFP extends App {
+object PromiseChainScalaFP extends App {
   val arraySize = 1000000
   val tooManyArrays = (Runtime.getRuntime().totalMemory() / arraySize).toInt + 1
 
   {
-    val start = new EndlessChainPrimScalaFP(arraySize)
+    val start = new PromiseChainScalaFP(arraySize)
     var previous = start
-    var current: EndlessChainPrimScalaFP = null
+    var current: PromiseChainScalaFP = null
     for (i <- 1 until tooManyArrays) {
-      current = new EndlessChainPrimScalaFP(arraySize)
+      current = new PromiseChainScalaFP(arraySize)
       current.p.completeWith(previous.p.future)
       previous = current
     }

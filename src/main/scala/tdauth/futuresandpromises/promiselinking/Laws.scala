@@ -1,4 +1,4 @@
-package tdauth.futuresandpromises.memory
+package tdauth.futuresandpromises.promiselinking
 
 import tdauth.futuresandpromises.cas.PrimCAS
 

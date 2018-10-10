@@ -1,4 +1,4 @@
-package tdauth.futuresandpromises.memory
+package tdauth.futuresandpromises.promiselinking
 
 import java.util.concurrent.Executors
 
@@ -7,12 +7,13 @@ import tdauth.futuresandpromises.JavaExecutor
 import tdauth.futuresandpromises.stm.PrimSTM
 
 /**
- * Since it seems that the memory consumption by callbacks has been fixed and the benchmark from Scala FP does not work anymore,
- * we have to produce our own example based on the answer in [[https://users.scala-lang.org/t/how-does-promise-linking-work/3326/4]].
+ * Since it seems that the memory consumption by callbacks has been fixed and the benchmark from Scala FP does
+ * not work anymore (see [[ScalaFPMemoryTest]]), we have to produce our own example based on the answer in
+ * [[https://users.scala-lang.org/t/how-does-promise-linking-work/3326 How does promise linking work?]].
  *
  * This produces a `java.lang.OutOfMemoryError: Java heap space` when no promise linking is implemented.
  */
-class EndlessChainPrimSTM(ex: Executor, arraySize: Int) extends PrimSTM[Unit](ex) {
+class PromiseChainPrimSTM(ex: Executor, arraySize: Int) extends PrimSTM[Unit](ex) {
   val array = new Array[Byte](arraySize)
 
   override def finalize = {
@@ -21,17 +22,17 @@ class EndlessChainPrimSTM(ex: Executor, arraySize: Int) extends PrimSTM[Unit](ex
   }
 }
 
-object EndlessChainPrimSTM extends App {
+object PromiseChainPrimSTM extends App {
   val arraySize = 1000000
   val tooManyArrays = (Runtime.getRuntime().totalMemory() / arraySize).toInt + 1
 
   {
     val ex = new JavaExecutor(Executors.newSingleThreadExecutor())
-    val start = new EndlessChainPrimSTM(ex, arraySize)
+    val start = new PromiseChainPrimSTM(ex, arraySize)
     var previous = start
-    var current: EndlessChainPrimSTM = null
+    var current: PromiseChainPrimSTM = null
     for (i <- 1 until tooManyArrays) {
-      current = new EndlessChainPrimSTM(ex, arraySize)
+      current = new PromiseChainPrimSTM(ex, arraySize)
       current.tryCompleteWith(previous)
       previous = current
     }
