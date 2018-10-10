@@ -7,6 +7,7 @@ import tdauth.futuresandpromises.Factory
 import tdauth.futuresandpromises.Future
 import tdauth.futuresandpromises.Try
 
+// TODO #28 Use the executor
 class TwitterFuture[T](future: com.twitter.util.Future[T], ex: Executor) extends Future[T] {
   override def get: T = Await.result(future)
 
