@@ -52,40 +52,97 @@ class Synchronizer(max: Int) {
  * Compares the performance of our FP implementation to the performance of Scala FP and Twitter Util.
  */
 object Benchmarks extends App {
+  val ITERATIONS = 10
   val CORES = 1
 
-  val PERF1_HIGH_CONTENTION_N = 3
-  val PERF1_HIGH_CONTENTION_M = 3
-  val PERF1_HIGH_CONTENTION_K = 3
-  val PERF1_LOW_CONTENTION_N = 3
-  val PERF1_LOW_CONTENTION_M = 3
-  val PERF1_LOW_CONTENTION_K = 3
-  val PERF2_N = 3
-  val PERF3_N = 3
+  val PERF1_HIGH_CONTENTION_N = 1000
+  val PERF1_HIGH_CONTENTION_M = 100
+  val PERF1_HIGH_CONTENTION_K = 200
+  val PERF1_LOW_CONTENTION_N = 100000
+  val PERF1_LOW_CONTENTION_M = 20
+  val PERF1_LOW_CONTENTION_K = 2
+  val PERF2_N = 2000000
+  val PERF3_N = 2000000
 
-  // Scala FP
-  perf1ScalaFP(PERF1_HIGH_CONTENTION_N, PERF1_HIGH_CONTENTION_M, PERF1_HIGH_CONTENTION_K, CORES)
-  perf1ScalaFP(PERF1_LOW_CONTENTION_N, PERF1_LOW_CONTENTION_M, PERF1_LOW_CONTENTION_K, CORES)
-  perf2ScalaFP(PERF2_N, CORES)
-  perf3ScalaFP(PERF3_N, CORES)
+  // run tests here
+  test1
+  test2
 
-  // Prim CAS
-  perf1Prim(PERF1_HIGH_CONTENTION_N, PERF1_HIGH_CONTENTION_M, PERF1_HIGH_CONTENTION_K, CORES, ex => new PrimCAS(ex))
-  perf1Prim(PERF1_LOW_CONTENTION_N, PERF1_LOW_CONTENTION_M, PERF1_LOW_CONTENTION_K, CORES, ex => new PrimCAS(ex))
-  perf2Prim(PERF2_N, CORES, ex => new PrimCAS(ex))
-  perf3Prim(PERF3_N, CORES, ex => new PrimCAS(ex))
+  def time[R](block: => R): R = {
+    val t0 = System.nanoTime()
+    val result = block // call-by-name
+    val t1 = System.nanoTime()
+    printf("Elapsed time: " + (t1 - t0) + "ns")
+    result
+  }
 
-  // Prim MVar
-  perf1Prim(PERF1_HIGH_CONTENTION_N, PERF1_HIGH_CONTENTION_M, PERF1_HIGH_CONTENTION_K, CORES, ex => new PrimMVar(ex))
-  perf1Prim(PERF1_LOW_CONTENTION_N, PERF1_LOW_CONTENTION_M, PERF1_LOW_CONTENTION_K, CORES, ex => new PrimMVar(ex))
-  perf2Prim(PERF2_N, CORES, ex => new PrimMVar(ex))
-  perf3Prim(PERF3_N, CORES, ex => new PrimMVar(ex))
+  def execTest(t: () => Unit): Double = {
+    // TODO performGC
+    val start = System.nanoTime()
+    t.apply()
+    val fin = System.nanoTime()
+    val result = (fin - start)
+    val seconds = result.toDouble / 1000000000.0
+    printf("Time: %.2fs\n", seconds)
+    seconds
+  }
 
-  // Prim STM
-  perf1Prim(PERF1_HIGH_CONTENTION_N, PERF1_HIGH_CONTENTION_M, PERF1_HIGH_CONTENTION_K, CORES, ex => new PrimSTM(ex))
-  perf1Prim(PERF1_LOW_CONTENTION_N, PERF1_LOW_CONTENTION_M, PERF1_LOW_CONTENTION_K, CORES, ex => new PrimSTM(ex))
-  perf2Prim(PERF2_N, CORES, ex => new PrimSTM(ex))
-  perf3Prim(PERF3_N, CORES, ex => new PrimSTM(ex))
+  def runTest(n: Int, t: () => Unit) {
+    val rs = for (i <- (0 until n)) yield execTest(t)
+    val xs = rs.sorted
+    val low = xs.head
+    val high = xs.last
+    val m = xs.length.toDouble
+    val av = xs.sum / m
+    printf("low: %.2fs high: %.2fs avrg: %.2fs\n", low, high, av)
+  }
+
+  def runAll(n: Int, t0: () => Unit, t1: () => Unit, t2: () => Unit, t3: () => Unit): Unit = {
+    println("Scala FP")
+    runTest(n, t0)
+    println("Prim CAS")
+    runTest(n, t1)
+    println("Prim MVar")
+    runTest(n, t2)
+    println("Prim STM")
+    runTest(n, t3)
+  }
+
+  def test1() {
+    runAll(
+      ITERATIONS,
+      () => perf1ScalaFP(PERF1_HIGH_CONTENTION_N, PERF1_HIGH_CONTENTION_M, PERF1_HIGH_CONTENTION_K, CORES),
+      () => perf1Prim(PERF1_HIGH_CONTENTION_N, PERF1_HIGH_CONTENTION_M, PERF1_HIGH_CONTENTION_K, CORES, ex => new PrimCAS(ex)),
+      () => perf1Prim(PERF1_HIGH_CONTENTION_N, PERF1_HIGH_CONTENTION_M, PERF1_HIGH_CONTENTION_K, CORES, ex => new PrimMVar(ex)),
+      () => perf1Prim(PERF1_HIGH_CONTENTION_N, PERF1_HIGH_CONTENTION_M, PERF1_HIGH_CONTENTION_K, CORES, ex => new PrimSTM(ex)))
+  }
+
+  def test2() {
+    runAll(
+      ITERATIONS,
+      () => perf1ScalaFP(PERF1_LOW_CONTENTION_N, PERF1_LOW_CONTENTION_M, PERF1_LOW_CONTENTION_K, CORES),
+      () => perf1Prim(PERF1_LOW_CONTENTION_N, PERF1_LOW_CONTENTION_M, PERF1_LOW_CONTENTION_K, CORES, ex => new PrimCAS(ex)),
+      () => perf1Prim(PERF1_LOW_CONTENTION_N, PERF1_LOW_CONTENTION_M, PERF1_LOW_CONTENTION_K, CORES, ex => new PrimMVar(ex)),
+      () => perf1Prim(PERF1_LOW_CONTENTION_N, PERF1_LOW_CONTENTION_M, PERF1_LOW_CONTENTION_K, CORES, ex => new PrimSTM(ex)))
+  }
+
+  def test3() {
+    runAll(
+      ITERATIONS,
+      () => perf2ScalaFP(PERF2_N, CORES),
+      () => perf2Prim(PERF2_N, CORES, ex => new PrimCAS(ex)),
+      () => perf2Prim(PERF2_N, CORES, ex => new PrimMVar(ex)),
+      () => perf2Prim(PERF2_N, CORES, ex => new PrimSTM(ex)))
+  }
+
+  def test4() {
+    runAll(
+      ITERATIONS,
+      () => perf3ScalaFP(PERF3_N, CORES),
+      () => perf3Prim(PERF3_N, CORES, ex => new PrimCAS(ex)),
+      () => perf3Prim(PERF3_N, CORES, ex => new PrimMVar(ex)),
+      () => perf3Prim(PERF3_N, CORES, ex => new PrimSTM(ex)))
+  }
 
   def getScalaFPExecutor(n: Int): Tuple2[ExecutorService, ExecutionContext] = {
     val executionService = Executors.newFixedThreadPool(n)
