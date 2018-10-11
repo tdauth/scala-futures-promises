@@ -56,17 +56,17 @@ object Benchmarks extends App {
   val CORES = Vector(1, 2, 4, 8)
 
   // test 1
-  val PERF1_HIGH_CONTENTION_N = 10000
-  val PERF1_HIGH_CONTENTION_M = 100
-  val PERF1_HIGH_CONTENTION_K = 200
+  val TEST_1_N = 10000
+  val TEST_1_M = 100
+  val TEST_1_K = 200
   // test 2
-  val PERF1_LOW_CONTENTION_N = 100000
-  val PERF1_LOW_CONTENTION_M = 20
-  val PERF1_LOW_CONTENTION_K = 2
+  val TEST_2_N = 100000
+  val TEST_2_M = 20
+  val TEST_2_K = 2
   // test 3
-  val PERF2_N = 2000000
+  val TEST_3_N = 2000000
   // test 4
-  val PERF3_N = 2000000
+  val TEST_4_N = 2000000
 
   runAllTests
 
@@ -111,9 +111,9 @@ object Benchmarks extends App {
   }
 
   def test1(cores: Int) {
-    val n = PERF1_HIGH_CONTENTION_N
-    val m = PERF1_HIGH_CONTENTION_M
-    val k = PERF1_HIGH_CONTENTION_K
+    val n = TEST_1_N
+    val m = TEST_1_M
+    val k = TEST_1_K
     runAll(
       ITERATIONS,
       () => perf1ScalaFP(n, m, k, cores),
@@ -123,9 +123,9 @@ object Benchmarks extends App {
   }
 
   def test2(cores: Int) {
-    val n = PERF1_LOW_CONTENTION_N
-    val m = PERF1_LOW_CONTENTION_M
-    val k = PERF1_LOW_CONTENTION_K
+    val n = TEST_2_N
+    val m = TEST_2_M
+    val k = TEST_2_K
     runAll(
       ITERATIONS,
       () => perf1ScalaFP(n, m, k, cores),
@@ -135,7 +135,7 @@ object Benchmarks extends App {
   }
 
   def test3(cores: Int) {
-    val n = PERF2_N
+    val n = TEST_3_N
     runAll(
       ITERATIONS,
       () => perf2ScalaFP(n, cores),
@@ -145,7 +145,7 @@ object Benchmarks extends App {
   }
 
   def test4(cores: Int) {
-    val n = PERF3_N
+    val n = TEST_4_N
     runAll(
       ITERATIONS,
       () => perf3ScalaFP(n, cores),
