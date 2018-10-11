@@ -81,7 +81,7 @@ object Benchmarks extends App {
   def execTest(t: () => Unit): Double = {
     System.gc
     val start = System.nanoTime()
-    t.apply()
+    t()
     val fin = System.nanoTime()
     val result = (fin - start)
     val seconds = result.toDouble / 1000000000.0
@@ -99,15 +99,17 @@ object Benchmarks extends App {
     printf("low: %.2fs high: %.2fs avrg: %.2fs\n", low, high, av)
   }
 
-  def runAll(n: Int, t0: () => Unit, t1: () => Unit, t2: () => Unit, t3: () => Unit): Unit = {
-    println("Scala FP")
+  def runAll(n: Int, t0: () => Unit, t1: () => Unit, t2: () => Unit, t3: () => Unit, t4: () => Unit): Unit = {
+    println("Twitter Util")
     runTest(n, t0)
-    println("Prim CAS")
+    println("Scala FP")
     runTest(n, t1)
-    println("Prim MVar")
+    println("Prim CAS")
     runTest(n, t2)
-    println("Prim STM")
+    println("Prim MVar")
     runTest(n, t3)
+    println("Prim STM")
+    runTest(n, t4)
   }
 
   def test1(cores: Int) {
@@ -116,6 +118,7 @@ object Benchmarks extends App {
     val k = TEST_1_K
     runAll(
       ITERATIONS,
+      () => perf1TwitterUtil(n, m, k, cores),
       () => perf1ScalaFP(n, m, k, cores),
       () => perf1Prim(n, m, k, cores, ex => new PrimCAS(ex)),
       () => perf1Prim(n, m, k, cores, ex => new PrimMVar(ex)),
@@ -128,6 +131,7 @@ object Benchmarks extends App {
     val k = TEST_2_K
     runAll(
       ITERATIONS,
+      () => perf1TwitterUtil(n, m, k, cores),
       () => perf1ScalaFP(n, m, k, cores),
       () => perf1Prim(n, m, k, cores, ex => new PrimCAS(ex)),
       () => perf1Prim(n, m, k, cores, ex => new PrimMVar(ex)),
@@ -138,6 +142,7 @@ object Benchmarks extends App {
     val n = TEST_3_N
     runAll(
       ITERATIONS,
+      () => perf2TwitterUtil(n, cores),
       () => perf2ScalaFP(n, cores),
       () => perf2Prim(n, cores, ex => new PrimCAS(ex)),
       () => perf2Prim(n, cores, ex => new PrimMVar(ex)),
@@ -148,6 +153,7 @@ object Benchmarks extends App {
     val n = TEST_4_N
     runAll(
       ITERATIONS,
+      () => perf3TwitterUtil(n, cores),
       () => perf3ScalaFP(n, cores),
       () => perf3Prim(n, cores, ex => new PrimCAS(ex)),
       () => perf3Prim(n, cores, ex => new PrimMVar(ex)),
@@ -165,7 +171,7 @@ object Benchmarks extends App {
       println(coresSeparator)
       println("Cores: " + c)
       println(coresSeparator)
-      t.apply(c)
+      t(c)
     })
   }
 
@@ -181,6 +187,8 @@ object Benchmarks extends App {
     runTest4
   }
 
+  def getTwitterUtilExecutor(n: Int) = com.twitter.util.FuturePool(Executors.newFixedThreadPool(n))
+
   def getScalaFPExecutor(n: Int): Tuple2[ExecutorService, ExecutionContext] = {
     val executionService = Executors.newFixedThreadPool(n)
     (executionService, ExecutionContext.fromExecutorService(executionService))
@@ -191,20 +199,93 @@ object Benchmarks extends App {
     new JavaExecutor(executionService)
   }
 
-  /*
-    -- For each promise pi taken from [p1,...,pn]
---     m times onComplete pi incCount
---     k times tryComplete pi v
---     get pi
--- wait for counter to reach n*m (all onCompletes are processed)
-*/
+  def perf1TwitterUtil(n: Int, m: Int, k: Int, cores: Int) {
+    val counter = new Synchronizer(n * m)
+    val ex = getTwitterUtilExecutor(cores)
+
+    val promises = (1 to n).map(_ => com.twitter.util.Promise[Int])
+
+    promises.foreach(p => {
+      1 to m foreach (_ => {
+        ex.executor.submit(new Runnable {
+          override def run(): Unit = p.respond(t => counter.increment) // TODO How to pass ex, so the callback is submitted to the executor?
+        })
+      })
+      1 to k foreach (_ => {
+        ex.executor.submit(new Runnable {
+          override def run(): Unit = p.updateIfEmpty(com.twitter.util.Return(1))
+        })
+      })
+    })
+
+    // get ps
+    promises.foreach(p => com.twitter.util.Await.result(p)) // TODO Try it without get
+
+    // wait for counter to reach n*m
+    counter.await
+    ex.executor.shutdownNow
+  }
+
+  def perf2TwitterUtil(n: Int, cores: Int) {
+    val ex = getTwitterUtilExecutor(cores)
+
+    val promises = (1 to n).map(_ => com.twitter.util.Promise[Int])
+
+    def registerOnComplete(rest: Seq[com.twitter.util.Promise[Int]]) {
+      val p1 = if (rest.size > 0) rest(0) else null
+      val p2 = if (rest.size > 1) rest(1) else null
+      if (p1 ne null) {
+        p1.respond(t => {
+          if (p2 ne null) {
+            p2.setValue(1)
+            registerOnComplete(rest.tail)
+          }
+        }) // TODO How to pass ex, so the callback is submitted to the executor?
+      }
+    }
+
+    registerOnComplete(promises)
+
+    promises(0).setValue(1)
+    com.twitter.util.Await.result(promises.last)
+    ex.executor.shutdownNow
+  }
+
+  def perf3TwitterUtil(n: Int, cores: Int) {
+    val ex = getTwitterUtilExecutor(cores)
+
+    val promises = (1 to n).map(_ => com.twitter.util.Promise[Int])
+
+    def registerOnComplete(rest: Seq[com.twitter.util.Promise[Int]]) {
+      val p1 = if (rest.size > 0) rest(0) else null
+      val p2 = if (rest.size > 1) rest(1) else null
+      if (p1 ne null) {
+        p1.respond(t => {
+          if (p2 ne null) {
+            p2.setValue(1)
+          }
+        }) // TODO How to pass ex, so the callback is submitted to the executor?
+
+        if (p2 ne null) {
+          registerOnComplete(rest.tail)
+        }
+      }
+    }
+
+    registerOnComplete(promises)
+
+    promises(0).setValue(1)
+    com.twitter.util.Await.result(promises.last)
+    ex.executor.shutdownNow
+  }
+
   def perf1ScalaFP(n: Int, m: Int, k: Int, cores: Int) {
     val counter = new Synchronizer(n * m)
     val ex = getScalaFPExecutor(cores)
     val executionService = ex._1
     val executionContext = ex._2
 
-    val promises = (1 to n).map(_ => scala.concurrent.Promise.apply[Int])
+    val promises = (1 to n).map(_ => scala.concurrent.Promise[Int])
 
     promises.foreach(p => {
       1 to m foreach (_ => {
@@ -232,7 +313,7 @@ object Benchmarks extends App {
     val executionService = ex._1
     val executionContext = ex._2
 
-    val promises = (1 to n).map(_ => scala.concurrent.Promise.apply[Int])
+    val promises = (1 to n).map(_ => scala.concurrent.Promise[Int])
 
     def registerOnComplete(rest: Seq[scala.concurrent.Promise[Int]]) {
       val p1 = if (rest.size > 0) rest(0) else null
@@ -259,7 +340,7 @@ object Benchmarks extends App {
     val executionService = ex._1
     val executionContext = ex._2
 
-    val promises = (1 to n).map(_ => scala.concurrent.Promise.apply[Int])
+    val promises = (1 to n).map(_ => scala.concurrent.Promise[Int])
 
     def registerOnComplete(rest: Seq[scala.concurrent.Promise[Int]]) {
       val p1 = if (rest.size > 0) rest(0) else null
@@ -288,7 +369,7 @@ object Benchmarks extends App {
     val counter = new Synchronizer(n * m)
     val ex = getPrimExecutor(cores)
 
-    val promises = (1 to n).map(_ => f.apply(ex))
+    val promises = (1 to n).map(_ => f(ex))
 
     promises.foreach(p => {
       1 to m foreach (_ => ex.submit(() => p.onComplete(t => counter.increment)))
@@ -303,16 +384,9 @@ object Benchmarks extends App {
     ex.shutdown
   }
 
-  /*
-   -- chain of (nested) oncomplete and tries
---  onComplete p1 (do tryComplete p2
---                    onComplete p2 (do tryComplete p3
---                                      ...            ))
---  tryComplete p1
-   */
   def perf2Prim(n: Int, cores: Int, f: (Executor) => FP[Int]) {
     val ex = getPrimExecutor(cores)
-    val promises = (1 to n).map(_ => f.apply(ex))
+    val promises = (1 to n).map(_ => f(ex))
 
     def registerOnComplete(rest: Seq[FP[Int]]) {
       val p1 = if (rest.size > 0) rest(0) else null
@@ -334,17 +408,9 @@ object Benchmarks extends App {
     ex.shutdown
   }
 
-  /*
-   -- chain of oncomplete and tries
--- no excessive nesting
--- do onComplete p1 (tryComplete p2)
---    onComplete p2 (tryComplete p3)
---    ...
----   tryComplete p1
-   */
   def perf3Prim(n: Int, cores: Int, f: (Executor) => FP[Int]) {
     val ex = getPrimExecutor(cores)
-    val promises = (1 to n).map(_ => f.apply(ex))
+    val promises = (1 to n).map(_ => f(ex))
 
     def registerOnComplete(rest: Seq[FP[Int]]) {
       val p1 = if (rest.size > 0) rest(0) else null
