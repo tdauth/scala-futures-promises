@@ -241,7 +241,6 @@ object Benchmarks extends App {
         p1.future.onComplete(t => {
           if (p2 ne null) {
             p2.trySuccess(1)
-
             registerOnComplete(rest.tail)
           }
         })(executionContext)
@@ -256,7 +255,6 @@ object Benchmarks extends App {
   }
 
   def perf3ScalaFP(n: Int, cores: Int) {
-    val counter = new Synchronizer(n)
     val ex = getScalaFPExecutor(cores)
     val executionService = ex._1
     val executionContext = ex._2
@@ -271,7 +269,6 @@ object Benchmarks extends App {
           if (p2 ne null) {
             p2.trySuccess(1)
           }
-          counter.increment
         })(executionContext)
 
         if (p2 ne null) {

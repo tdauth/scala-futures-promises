@@ -33,7 +33,6 @@ class PrimCAS[T](ex: Executor) extends FP[T] {
     }
   }
 
-  // TODO #25 Optimize recursive call?
   override def tryComplete(v: Try[T]): Boolean = {
     val s = result.get
     s match {
@@ -49,7 +48,6 @@ class PrimCAS[T](ex: Executor) extends FP[T] {
     }
   }
 
-  // TODO #25 Optimize recursive call?
   override def onComplete(c: Callback): Unit = {
     val s = result.get
     s match {
