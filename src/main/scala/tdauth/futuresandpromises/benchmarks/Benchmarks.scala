@@ -36,7 +36,7 @@ class Synchronizer(max: Int) {
 
   def await {
     var notFull = true
-    while (notFull) {
+    do {
       lock.lock()
       try {
         notFull = counter < max
@@ -44,7 +44,7 @@ class Synchronizer(max: Int) {
       } finally {
         lock.unlock();
       }
-    }
+    } while (notFull)
   }
 }
 
@@ -64,8 +64,7 @@ object Benchmarks extends App {
   val PERF2_N = 2000000
   val PERF3_N = 2000000
 
-  runTest1
-  //runAllTests
+  runAllTests
 
   def time[R](block: => R): R = {
     val t0 = System.nanoTime()
@@ -158,9 +157,14 @@ object Benchmarks extends App {
   def runTest4 = runTestForCores("Test 4", test4)
 
   def runAllTests {
+    val separator = "=" * 40
+    println(separator)
     runTest1
+    println(separator)
     runTest2
+    println(separator)
     runTest3
+    println(separator)
     runTest4
   }
 
