@@ -52,7 +52,10 @@ class PrimMVar[T](ex: Executor) extends FP[T] {
   override def onComplete(c: Callback): Unit = {
     val s = result.take()
     s match {
-      case Left(x) => dispatchCallback(x, c)
+      case Left(x) => {
+        result.put(s)
+        dispatchCallback(x, c)
+      }
       case Right(x) => {
         result.put(Right(x :+ c))
       }
