@@ -86,6 +86,18 @@ object FPPerformanceTest extends Bench.OfflineReport {
         cores => sulzmannPerf1TwitterUtil(100000, 20, 2, cores)
       }
     }
+
+    measure method "perf2" in {
+      using(CORES_RANGE) in {
+        cores => sulzmannPerf2TwitterUtil(2000000, cores)
+      }
+    }
+
+    measure method "perf3" in {
+      using(CORES_RANGE) in {
+        cores => sulzmannPerf3TwitterUtil(2000000, cores)
+      }
+    }
   }
 
   performance of "Scala FP" in {
@@ -98,6 +110,18 @@ object FPPerformanceTest extends Bench.OfflineReport {
     measure method "perf1LowContention" in {
       using(CORES_RANGE) in {
         cores => sulzmannPerf1ScalaFP(100000, 20, 2, cores)
+      }
+    }
+
+    measure method "perf2" in {
+      using(CORES_RANGE) in {
+        cores => sulzmannPerf2ScalaFP(2000000, cores)
+      }
+    }
+
+    measure method "perf3" in {
+      using(CORES_RANGE) in {
+        cores => sulzmannPerf3ScalaFP(2000000, cores)
       }
     }
   }
@@ -215,6 +239,47 @@ object FPPerformanceTest extends Bench.OfflineReport {
     ex.shutdownNow
   }
 
+  def sulzmannPerf2TwitterUtil(n: Int, cores: Int) {
+    // TODO Use Twitter executor
+
+    val promises = for (i <- 0 to n) yield com.twitter.util.Promise.apply[Int]
+
+    def registerOnComplete(p1: com.twitter.util.Promise[Int], p2: com.twitter.util.Promise[Int], rest: Seq[com.twitter.util.Promise[Int]]) {
+      p1.respond(t => {
+        if (p2 != null) {
+          p2.updateIfEmpty(Return(1))
+          registerOnComplete(p2, rest.head, rest.tail)
+        }
+      })
+    }
+
+    registerOnComplete(promises(0), promises(1), promises.drop(2))
+
+    promises(0).updateIfEmpty(Return(1))
+    com.twitter.util.Await.result(promises.last)
+  }
+
+  def sulzmannPerf3TwitterUtil(n: Int, cores: Int) {
+    // TODO Use Twitter Util executor
+
+    val promises = for (i <- 0 to n) yield com.twitter.util.Promise.apply[Int]
+
+    def registerOnComplete(p1: com.twitter.util.Promise[Int], p2: com.twitter.util.Promise[Int], rest: Seq[com.twitter.util.Promise[Int]]) {
+      p1.respond(t => {
+        if (p2 != null) {
+          p2.updateIfEmpty(Return(1))
+        }
+      })
+
+      if (p2 != null) registerOnComplete(p2, rest.head, rest.tail)
+    }
+
+    registerOnComplete(promises(0), promises(1), promises.drop(2))
+
+    promises(0).updateIfEmpty(Return(1))
+    com.twitter.util.Await.result(promises.last)
+  }
+
   def sulzmannPerf1ScalaFP(n: Int, m: Int, k: Int, cores: Int) {
     val counter = new Synchronizer(n * m)
     val ex = getScalaFPExecutor(cores)
@@ -241,6 +306,53 @@ object FPPerformanceTest extends Bench.OfflineReport {
 
     // wait for counter to reach n*m
     counter.await
+    executionService.shutdownNow
+  }
+
+  def sulzmannPerf2ScalaFP(n: Int, cores: Int) {
+    val ex = getScalaFPExecutor(cores)
+    val executionService = ex._1
+    val executionContext = ex._2
+
+    val promises = for (i <- 0 to n) yield scala.concurrent.Promise.apply[Int]
+
+    def registerOnComplete(p1: scala.concurrent.Promise[Int], p2: scala.concurrent.Promise[Int], rest: Seq[scala.concurrent.Promise[Int]]) {
+      p1.future.onComplete(t => {
+        if (p2 != null) {
+          p2.trySuccess(1)
+          registerOnComplete(p2, rest.head, rest.tail)
+        }
+      })(executionContext)
+    }
+
+    registerOnComplete(promises(0), promises(1), promises.drop(2))
+
+    promises(0).trySuccess(1)
+    Await.result(promises.last.future, Duration.Inf)
+    executionService.shutdownNow
+  }
+
+  def sulzmannPerf3ScalaFP(n: Int, cores: Int) {
+    val ex = getScalaFPExecutor(cores)
+    val executionService = ex._1
+    val executionContext = ex._2
+
+    val promises = for (i <- 0 to n) yield scala.concurrent.Promise.apply[Int]
+
+    def registerOnComplete(p1: scala.concurrent.Promise[Int], p2: scala.concurrent.Promise[Int], rest: Seq[scala.concurrent.Promise[Int]]) {
+      p1.future.onComplete(t => {
+        if (p2 != null) {
+          p2.trySuccess(1)
+        }
+      })(executionContext)
+
+      if (p2 != null) registerOnComplete(p2, rest.head, rest.tail)
+    }
+
+    registerOnComplete(promises(0), promises(1), promises.drop(2))
+
+    promises(0).trySuccess(1)
+    Await.result(promises.last.future, Duration.Inf)
     executionService.shutdownNow
   }
 
