@@ -53,7 +53,7 @@ class Synchronizer(max: Int) {
  */
 object Benchmarks extends App {
   val ITERATIONS = 10
-  val CORES = 1
+  val CORES = Vector(1, 2, 4, 8)
 
   val PERF1_HIGH_CONTENTION_N = 1000
   val PERF1_HIGH_CONTENTION_M = 100
@@ -64,9 +64,8 @@ object Benchmarks extends App {
   val PERF2_N = 2000000
   val PERF3_N = 2000000
 
-  // run tests here
-  test1
-  test2
+  runTest1
+  //runAllTests
 
   def time[R](block: => R): R = {
     val t0 = System.nanoTime()
@@ -77,7 +76,7 @@ object Benchmarks extends App {
   }
 
   def execTest(t: () => Unit): Double = {
-    // TODO performGC
+    System.gc
     val start = System.nanoTime()
     t.apply()
     val fin = System.nanoTime()
@@ -108,40 +107,61 @@ object Benchmarks extends App {
     runTest(n, t3)
   }
 
-  def test1() {
+  def test1(cores: Int) {
     runAll(
       ITERATIONS,
-      () => perf1ScalaFP(PERF1_HIGH_CONTENTION_N, PERF1_HIGH_CONTENTION_M, PERF1_HIGH_CONTENTION_K, CORES),
-      () => perf1Prim(PERF1_HIGH_CONTENTION_N, PERF1_HIGH_CONTENTION_M, PERF1_HIGH_CONTENTION_K, CORES, ex => new PrimCAS(ex)),
-      () => perf1Prim(PERF1_HIGH_CONTENTION_N, PERF1_HIGH_CONTENTION_M, PERF1_HIGH_CONTENTION_K, CORES, ex => new PrimMVar(ex)),
-      () => perf1Prim(PERF1_HIGH_CONTENTION_N, PERF1_HIGH_CONTENTION_M, PERF1_HIGH_CONTENTION_K, CORES, ex => new PrimSTM(ex)))
+      () => perf1ScalaFP(PERF1_HIGH_CONTENTION_N, PERF1_HIGH_CONTENTION_M, PERF1_HIGH_CONTENTION_K, cores),
+      () => perf1Prim(PERF1_HIGH_CONTENTION_N, PERF1_HIGH_CONTENTION_M, PERF1_HIGH_CONTENTION_K, cores, ex => new PrimCAS(ex)),
+      () => perf1Prim(PERF1_HIGH_CONTENTION_N, PERF1_HIGH_CONTENTION_M, PERF1_HIGH_CONTENTION_K, cores, ex => new PrimMVar(ex)),
+      () => perf1Prim(PERF1_HIGH_CONTENTION_N, PERF1_HIGH_CONTENTION_M, PERF1_HIGH_CONTENTION_K, cores, ex => new PrimSTM(ex)))
   }
 
-  def test2() {
+  def test2(cores: Int) {
     runAll(
       ITERATIONS,
-      () => perf1ScalaFP(PERF1_LOW_CONTENTION_N, PERF1_LOW_CONTENTION_M, PERF1_LOW_CONTENTION_K, CORES),
-      () => perf1Prim(PERF1_LOW_CONTENTION_N, PERF1_LOW_CONTENTION_M, PERF1_LOW_CONTENTION_K, CORES, ex => new PrimCAS(ex)),
-      () => perf1Prim(PERF1_LOW_CONTENTION_N, PERF1_LOW_CONTENTION_M, PERF1_LOW_CONTENTION_K, CORES, ex => new PrimMVar(ex)),
-      () => perf1Prim(PERF1_LOW_CONTENTION_N, PERF1_LOW_CONTENTION_M, PERF1_LOW_CONTENTION_K, CORES, ex => new PrimSTM(ex)))
+      () => perf1ScalaFP(PERF1_LOW_CONTENTION_N, PERF1_LOW_CONTENTION_M, PERF1_LOW_CONTENTION_K, cores),
+      () => perf1Prim(PERF1_LOW_CONTENTION_N, PERF1_LOW_CONTENTION_M, PERF1_LOW_CONTENTION_K, cores, ex => new PrimCAS(ex)),
+      () => perf1Prim(PERF1_LOW_CONTENTION_N, PERF1_LOW_CONTENTION_M, PERF1_LOW_CONTENTION_K, cores, ex => new PrimMVar(ex)),
+      () => perf1Prim(PERF1_LOW_CONTENTION_N, PERF1_LOW_CONTENTION_M, PERF1_LOW_CONTENTION_K, cores, ex => new PrimSTM(ex)))
   }
 
-  def test3() {
+  def test3(cores: Int) {
     runAll(
       ITERATIONS,
-      () => perf2ScalaFP(PERF2_N, CORES),
-      () => perf2Prim(PERF2_N, CORES, ex => new PrimCAS(ex)),
-      () => perf2Prim(PERF2_N, CORES, ex => new PrimMVar(ex)),
-      () => perf2Prim(PERF2_N, CORES, ex => new PrimSTM(ex)))
+      () => perf2ScalaFP(PERF2_N, cores),
+      () => perf2Prim(PERF2_N, cores, ex => new PrimCAS(ex)),
+      () => perf2Prim(PERF2_N, cores, ex => new PrimMVar(ex)),
+      () => perf2Prim(PERF2_N, cores, ex => new PrimSTM(ex)))
   }
 
-  def test4() {
+  def test4(cores: Int) {
     runAll(
       ITERATIONS,
-      () => perf3ScalaFP(PERF3_N, CORES),
-      () => perf3Prim(PERF3_N, CORES, ex => new PrimCAS(ex)),
-      () => perf3Prim(PERF3_N, CORES, ex => new PrimMVar(ex)),
-      () => perf3Prim(PERF3_N, CORES, ex => new PrimSTM(ex)))
+      () => perf3ScalaFP(PERF3_N, cores),
+      () => perf3Prim(PERF3_N, cores, ex => new PrimCAS(ex)),
+      () => perf3Prim(PERF3_N, cores, ex => new PrimMVar(ex)),
+      () => perf3Prim(PERF3_N, cores, ex => new PrimSTM(ex)))
+  }
+
+  def runTestForCores(name: String, t: (Int) => Unit) {
+    println(name)
+
+    CORES.foreach(c => {
+      println("Cores: " + c)
+      t.apply(c)
+    })
+  }
+
+  def runTest1 = runTestForCores("Test 1", test1)
+  def runTest2 = runTestForCores("Test 2", test2)
+  def runTest3 = runTestForCores("Test 3", test3)
+  def runTest4 = runTestForCores("Test 4", test4)
+
+  def runAllTests {
+    runTest1
+    runTest2
+    runTest3
+    runTest4
   }
 
   def getScalaFPExecutor(n: Int): Tuple2[ExecutorService, ExecutionContext] = {
