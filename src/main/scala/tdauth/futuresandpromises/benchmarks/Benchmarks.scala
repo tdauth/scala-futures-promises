@@ -55,13 +55,17 @@ object Benchmarks extends App {
   val ITERATIONS = 10
   val CORES = Vector(1, 2, 4, 8)
 
-  val PERF1_HIGH_CONTENTION_N = 1000
+  // test 1
+  val PERF1_HIGH_CONTENTION_N = 10000
   val PERF1_HIGH_CONTENTION_M = 100
   val PERF1_HIGH_CONTENTION_K = 200
+  // test 2
   val PERF1_LOW_CONTENTION_N = 100000
   val PERF1_LOW_CONTENTION_M = 20
   val PERF1_LOW_CONTENTION_K = 2
+  // test 3
   val PERF2_N = 2000000
+  // test 4
   val PERF3_N = 2000000
 
   runAllTests
@@ -107,39 +111,47 @@ object Benchmarks extends App {
   }
 
   def test1(cores: Int) {
+    val n = PERF1_HIGH_CONTENTION_N
+    val m = PERF1_HIGH_CONTENTION_M
+    val k = PERF1_HIGH_CONTENTION_K
     runAll(
       ITERATIONS,
-      () => perf1ScalaFP(PERF1_HIGH_CONTENTION_N, PERF1_HIGH_CONTENTION_M, PERF1_HIGH_CONTENTION_K, cores),
-      () => perf1Prim(PERF1_HIGH_CONTENTION_N, PERF1_HIGH_CONTENTION_M, PERF1_HIGH_CONTENTION_K, cores, ex => new PrimCAS(ex)),
-      () => perf1Prim(PERF1_HIGH_CONTENTION_N, PERF1_HIGH_CONTENTION_M, PERF1_HIGH_CONTENTION_K, cores, ex => new PrimMVar(ex)),
-      () => perf1Prim(PERF1_HIGH_CONTENTION_N, PERF1_HIGH_CONTENTION_M, PERF1_HIGH_CONTENTION_K, cores, ex => new PrimSTM(ex)))
+      () => perf1ScalaFP(n, m, k, cores),
+      () => perf1Prim(n, m, k, cores, ex => new PrimCAS(ex)),
+      () => perf1Prim(n, m, k, cores, ex => new PrimMVar(ex)),
+      () => perf1Prim(n, m, k, cores, ex => new PrimSTM(ex)))
   }
 
   def test2(cores: Int) {
+    val n = PERF1_LOW_CONTENTION_N
+    val m = PERF1_LOW_CONTENTION_M
+    val k = PERF1_LOW_CONTENTION_K
     runAll(
       ITERATIONS,
-      () => perf1ScalaFP(PERF1_LOW_CONTENTION_N, PERF1_LOW_CONTENTION_M, PERF1_LOW_CONTENTION_K, cores),
-      () => perf1Prim(PERF1_LOW_CONTENTION_N, PERF1_LOW_CONTENTION_M, PERF1_LOW_CONTENTION_K, cores, ex => new PrimCAS(ex)),
-      () => perf1Prim(PERF1_LOW_CONTENTION_N, PERF1_LOW_CONTENTION_M, PERF1_LOW_CONTENTION_K, cores, ex => new PrimMVar(ex)),
-      () => perf1Prim(PERF1_LOW_CONTENTION_N, PERF1_LOW_CONTENTION_M, PERF1_LOW_CONTENTION_K, cores, ex => new PrimSTM(ex)))
+      () => perf1ScalaFP(n, m, k, cores),
+      () => perf1Prim(n, m, k, cores, ex => new PrimCAS(ex)),
+      () => perf1Prim(n, m, k, cores, ex => new PrimMVar(ex)),
+      () => perf1Prim(n, m, k, cores, ex => new PrimSTM(ex)))
   }
 
   def test3(cores: Int) {
+    val n = PERF2_N
     runAll(
       ITERATIONS,
-      () => perf2ScalaFP(PERF2_N, cores),
-      () => perf2Prim(PERF2_N, cores, ex => new PrimCAS(ex)),
-      () => perf2Prim(PERF2_N, cores, ex => new PrimMVar(ex)),
-      () => perf2Prim(PERF2_N, cores, ex => new PrimSTM(ex)))
+      () => perf2ScalaFP(n, cores),
+      () => perf2Prim(n, cores, ex => new PrimCAS(ex)),
+      () => perf2Prim(n, cores, ex => new PrimMVar(ex)),
+      () => perf2Prim(n, cores, ex => new PrimSTM(ex)))
   }
 
   def test4(cores: Int) {
+    val n = PERF3_N
     runAll(
       ITERATIONS,
-      () => perf3ScalaFP(PERF3_N, cores),
-      () => perf3Prim(PERF3_N, cores, ex => new PrimCAS(ex)),
-      () => perf3Prim(PERF3_N, cores, ex => new PrimMVar(ex)),
-      () => perf3Prim(PERF3_N, cores, ex => new PrimSTM(ex)))
+      () => perf3ScalaFP(n, cores),
+      () => perf3Prim(n, cores, ex => new PrimCAS(ex)),
+      () => perf3Prim(n, cores, ex => new PrimMVar(ex)),
+      () => perf3Prim(n, cores, ex => new PrimSTM(ex)))
   }
 
   def runTestForCores(name: String, t: (Int) => Unit) {
