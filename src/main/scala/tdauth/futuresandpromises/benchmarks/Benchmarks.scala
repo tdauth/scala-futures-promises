@@ -155,12 +155,16 @@ object Benchmarks extends App {
   }
 
   def runTestForCores(name: String, t: (Int) => Unit) {
+    val nameSeparator = "=" * 40
+    println(nameSeparator)
     println(name)
-    val separator = "-" * 20
+    println(nameSeparator)
+    val coresSeparator = "-" * 40
 
     CORES.foreach(c => {
+      println(coresSeparator)
       println("Cores: " + c)
-      println(separator)
+      println(coresSeparator)
       t.apply(c)
     })
   }
@@ -171,14 +175,9 @@ object Benchmarks extends App {
   def runTest4 = runTestForCores("Test 4", test4)
 
   def runAllTests {
-    val separator = "=" * 40
-    println(separator)
     runTest1
-    println(separator)
     runTest2
-    println(separator)
     runTest3
-    println(separator)
     runTest4
   }
 
@@ -235,19 +234,21 @@ object Benchmarks extends App {
 
     val promises = (0 until n).map(_ => scala.concurrent.Promise.apply[Int])
 
-    def registerOnComplete(p1: scala.concurrent.Promise[Int], p2: scala.concurrent.Promise[Int], rest: Seq[scala.concurrent.Promise[Int]]) {
-      p1.future.onComplete(t => {
-        if (p2 != null) {
-          p2.trySuccess(1)
+    def registerOnComplete(rest: Seq[scala.concurrent.Promise[Int]]) {
+      val p1 = if (rest.size > 0) rest(0) else null
+      val p2 = if (rest.size > 1) rest(1) else null
+      if (p1 ne null) {
+        p1.future.onComplete(t => {
+          if (p2 ne null) {
+            p2.trySuccess(1)
 
-          val head = if (!rest.isEmpty) rest.head else null
-          val tail = if (!rest.isEmpty) rest.tail else null
-          registerOnComplete(p2, head, tail)
-        }
-      })(executionContext)
+            registerOnComplete(rest.tail)
+          }
+        })(executionContext)
+      }
     }
 
-    registerOnComplete(promises(0), promises(1), promises.drop(2))
+    registerOnComplete(promises)
 
     promises(0).trySuccess(1)
     Await.result(promises.last.future, Duration.Inf)
@@ -262,22 +263,24 @@ object Benchmarks extends App {
 
     val promises = (0 until n).map(_ => scala.concurrent.Promise.apply[Int])
 
-    def registerOnComplete(p1: scala.concurrent.Promise[Int], p2: scala.concurrent.Promise[Int], rest: Seq[scala.concurrent.Promise[Int]]) {
-      p1.future.onComplete(t => {
-        if (p2 != null) {
-          p2.trySuccess(1)
-        }
-        counter.increment
-      })(executionContext)
+    def registerOnComplete(rest: Seq[scala.concurrent.Promise[Int]]) {
+      val p1 = if (rest.size > 0) rest(0) else null
+      val p2 = if (rest.size > 1) rest(1) else null
+      if (p1 ne null) {
+        p1.future.onComplete(t => {
+          if (p2 ne null) {
+            p2.trySuccess(1)
+          }
+          counter.increment
+        })(executionContext)
 
-      if (p2 != null) {
-        val head = if (!rest.isEmpty) rest.head else null
-        val tail = if (!rest.isEmpty) rest.tail else null
-        registerOnComplete(p2, head, tail)
+        if (p2 ne null) {
+          registerOnComplete(rest.tail)
+        }
       }
     }
 
-    registerOnComplete(promises(0), promises(1), promises.drop(2))
+    registerOnComplete(promises)
 
     promises(0).trySuccess(1)
     Await.result(promises.last.future, Duration.Inf)
@@ -314,18 +317,20 @@ object Benchmarks extends App {
     val ex = getPrimExecutor(cores)
     val promises = (0 until n).map(_ => f.apply(ex))
 
-    def registerOnComplete(p1: FP[Int], p2: FP[Int], rest: Seq[FP[Int]]) {
-      p1.onComplete(t => {
-        if (p2 != null) {
-          p2.trySuccess(1)
-          val head = if (!rest.isEmpty) rest.head else null
-          val tail = if (!rest.isEmpty) rest.tail else null
-          registerOnComplete(p2, head, tail)
-        }
-      })
+    def registerOnComplete(rest: Seq[FP[Int]]) {
+      val p1 = if (rest.size > 0) rest(0) else null
+      val p2 = if (rest.size > 1) rest(1) else null
+      if (p1 ne null) {
+        p1.onComplete(t => {
+          if (p2 ne null) {
+            p2.trySuccess(1)
+            registerOnComplete(rest.tail)
+          }
+        })
+      }
     }
 
-    registerOnComplete(promises(0), promises(1), promises.drop(2))
+    registerOnComplete(promises)
 
     promises(0).trySuccess(1)
     promises.last.get
@@ -344,21 +349,23 @@ object Benchmarks extends App {
     val ex = getPrimExecutor(cores)
     val promises = (0 until n).map(_ => f.apply(ex))
 
-    def registerOnComplete(p1: FP[Int], p2: FP[Int], rest: Seq[FP[Int]]) {
-      p1.onComplete(t => {
-        if (p2 != null) {
-          p2.trySuccess(1)
-        }
-      })
+    def registerOnComplete(rest: Seq[FP[Int]]) {
+      val p1 = if (rest.size > 0) rest(0) else null
+      val p2 = if (rest.size > 1) rest(1) else null
+      if (p1 ne null) {
+        p1.onComplete(t => {
+          if (p2 ne null) {
+            p2.trySuccess(1)
+          }
+        })
 
-      if (p2 != null) {
-        val head = if (!rest.isEmpty) rest.head else null
-        val tail = if (!rest.isEmpty) rest.tail else null
-        registerOnComplete(p2, head, tail)
+        if (p2 ne null) {
+          registerOnComplete(rest.tail)
+        }
       }
     }
 
-    registerOnComplete(promises(0), promises(1), promises.drop(2))
+    registerOnComplete(promises)
 
     promises(0).trySuccess(1)
     promises.last.get
