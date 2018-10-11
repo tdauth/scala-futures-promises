@@ -90,7 +90,7 @@ object Benchmarks extends App {
   }
 
   def runTest(n: Int, t: () => Unit) {
-    val rs = for (i <- (0 until n)) yield execTest(t)
+    val rs = for (i <- (1 to n)) yield execTest(t)
     val xs = rs.sorted
     val low = xs.head
     val high = xs.last
@@ -204,15 +204,15 @@ object Benchmarks extends App {
     val executionService = ex._1
     val executionContext = ex._2
 
-    val promises = (0 until n).map(_ => scala.concurrent.Promise.apply[Int])
+    val promises = (1 to n).map(_ => scala.concurrent.Promise.apply[Int])
 
     promises.foreach(p => {
-      0 until m foreach (_ => {
+      1 to m foreach (_ => {
         executionService.submit(new Runnable {
           override def run(): Unit = p.future.onComplete(t => counter.increment)(executionContext)
         })
       })
-      0 until k foreach (_ => {
+      1 to k foreach (_ => {
         executionService.submit(new Runnable {
           override def run(): Unit = p.tryComplete(Success(1))
         })
@@ -232,7 +232,7 @@ object Benchmarks extends App {
     val executionService = ex._1
     val executionContext = ex._2
 
-    val promises = (0 until n).map(_ => scala.concurrent.Promise.apply[Int])
+    val promises = (1 to n).map(_ => scala.concurrent.Promise.apply[Int])
 
     def registerOnComplete(rest: Seq[scala.concurrent.Promise[Int]]) {
       val p1 = if (rest.size > 0) rest(0) else null
@@ -259,7 +259,7 @@ object Benchmarks extends App {
     val executionService = ex._1
     val executionContext = ex._2
 
-    val promises = (0 until n).map(_ => scala.concurrent.Promise.apply[Int])
+    val promises = (1 to n).map(_ => scala.concurrent.Promise.apply[Int])
 
     def registerOnComplete(rest: Seq[scala.concurrent.Promise[Int]]) {
       val p1 = if (rest.size > 0) rest(0) else null
@@ -288,11 +288,11 @@ object Benchmarks extends App {
     val counter = new Synchronizer(n * m)
     val ex = getPrimExecutor(cores)
 
-    val promises = (0 until n).map(_ => f.apply(ex))
+    val promises = (1 to n).map(_ => f.apply(ex))
 
     promises.foreach(p => {
-      0 until m foreach (_ => ex.submit(() => p.onComplete(t => counter.increment)))
-      0 until k foreach (_ => ex.submit(() => p.trySuccess(1)))
+      1 to m foreach (_ => ex.submit(() => p.onComplete(t => counter.increment)))
+      1 to k foreach (_ => ex.submit(() => p.trySuccess(1)))
     })
 
     // get ps
@@ -312,7 +312,7 @@ object Benchmarks extends App {
    */
   def perf2Prim(n: Int, cores: Int, f: (Executor) => FP[Int]) {
     val ex = getPrimExecutor(cores)
-    val promises = (0 until n).map(_ => f.apply(ex))
+    val promises = (1 to n).map(_ => f.apply(ex))
 
     def registerOnComplete(rest: Seq[FP[Int]]) {
       val p1 = if (rest.size > 0) rest(0) else null
@@ -344,7 +344,7 @@ object Benchmarks extends App {
    */
   def perf3Prim(n: Int, cores: Int, f: (Executor) => FP[Int]) {
     val ex = getPrimExecutor(cores)
-    val promises = (0 until n).map(_ => f.apply(ex))
+    val promises = (1 to n).map(_ => f.apply(ex))
 
     def registerOnComplete(rest: Seq[FP[Int]]) {
       val p1 = if (rest.size > 0) rest(0) else null
