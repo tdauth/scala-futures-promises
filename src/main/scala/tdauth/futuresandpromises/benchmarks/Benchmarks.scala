@@ -144,9 +144,11 @@ object Benchmarks extends App {
 
   def runTestForCores(name: String, t: (Int) => Unit) {
     println(name)
+    val separator = "-" * 20
 
     CORES.foreach(c => {
       println("Cores: " + c)
+      println(separator)
       t.apply(c)
     })
   }
