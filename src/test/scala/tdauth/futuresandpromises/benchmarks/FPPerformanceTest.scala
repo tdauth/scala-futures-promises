@@ -17,6 +17,35 @@ import tdauth.futuresandpromises.cas.PrimCAS
 import tdauth.futuresandpromises.mvar.PrimMVar
 import tdauth.futuresandpromises.stm.PrimSTM
 import java.util.concurrent.ExecutorService
+import java.util.concurrent.locks.ReentrantLock
+
+/**
+ * Waits until the counter has reached max.
+ */
+class Synchronizer(max: Int) {
+  var lock = new ReentrantLock()
+  var condition = lock.newCondition()
+  var counter = 0
+
+  def increment {
+    lock.lock()
+    try {
+      counter = counter + 1
+      condition.signal
+    } finally {
+      lock.unlock();
+    }
+  }
+
+  def await {
+    lock.lock()
+    try {
+      if (counter < max) condition.await
+    } finally {
+      lock.unlock();
+    }
+  }
+}
 
 /**
  * Compares the performance of our FP implementation to the performance of Scala FP and Twitter Util.
@@ -41,15 +70,48 @@ import java.util.concurrent.ExecutorService
 object FPPerformanceTest extends Bench.OfflineReport {
   val NUMBER_OF_NEW_PS = Gen.range("size")(10000, 100000, 10000)
   val NUMBER_OF_TRY_COMPLETE = Gen.range("size")(10000, 100000, 10000)
-  val NUMBER_OF_ON_COMPLETES = Gen.range("size")(100, 1000, 100) // 1000, 10000, 1000
+  val NUMBER_OF_ON_COMPLETES = Gen.range("size")(100, 1000, 100)
   val NUMBER_OF_FOLLOWED_BYS = Gen.range("size")(100, 1000, 100)
   val NUMBER_OF_FOLLOWED_BY_WITHS = Gen.range("size")(1000, 10000, 1000)
+
+  /*
+   n number of promises
+   m * n number of oncomplete runs
+   k * n number of try completes
+  */
+
+  /*
+   high contention case
+   n= 10000
+   m= 100
+   k= 200
+   */
+  val SULZMANN_HIGH_CONTENTION_CASE = for {
+    n <- Gen.range("n")(10000, 10000, 100)
+    m <- Gen.range("m")(100, 100, 100)
+    k <- Gen.range("k")(200, 200, 100)
+    cores <- Gen.range("cores")(1, 8, 1)
+  } yield (n, m, k, cores)
+
+  /*
+   n= 100000
+   m= 20
+   k= 2
+   */
+  val SULZMANN_LOWER_CONTENTION_CASE = for {
+    n <- Gen.range("n")(100000, 100000, 100)
+    m <- Gen.range("m")(20, 20, 100)
+    k <- Gen.range("k")(2, 2, 100)
+    cores <- Gen.range("cores")(1, 8, 1)
+  } yield (n, m, k, cores)
 
   // TODO #29 Do we even need executors and if so should we scale the number of threads?
   val executionService = Executors.newSingleThreadExecutor()
   // TODO #29 Executor for Twitter?
   // See https://groups.google.com/forum/#!topic/finaglers/ovDL2UFKoDw
   val twitterExecutor = com.twitter.util.FuturePool.apply(executionService)
+
+  def getTwitterUtilExecutor(n: Int): ExecutorService = Executors.newFixedThreadPool(n)
 
   def getScalaFPExecutor(n: Int): Tuple2[ExecutorService, ExecutionContext] = {
     val executionService = Executors.newFixedThreadPool(n)
@@ -111,6 +173,12 @@ object FPPerformanceTest extends Bench.OfflineReport {
             p.updateIfEmpty(Return(r))
             com.twitter.util.Await.ready(nested)
           }
+      }
+    }
+
+    measure method "sulzmann1HighContentionCase" in {
+      using(SULZMANN_HIGH_CONTENTION_CASE) in {
+        r => sulzmannPerf1TwitterUtil(r)
       }
     }
   }
@@ -177,6 +245,12 @@ object FPPerformanceTest extends Bench.OfflineReport {
           }
       }
     }
+
+    measure method "sulzmann1HighContentionCase" in {
+      using(SULZMANN_HIGH_CONTENTION_CASE) in {
+        r => sulzmannPerf1ScalaFP(r)
+      }
+    }
   }
 
   performance of "PrimCAS" in {
@@ -235,6 +309,12 @@ object FPPerformanceTest extends Bench.OfflineReport {
             nested.get
             ex.shutdown
           }
+      }
+    }
+
+    measure method "sulzmann1HighContentionCase" in {
+      using(SULZMANN_HIGH_CONTENTION_CASE) in {
+        r => sulzmannPerf1Prim(r, ex => new PrimCAS(ex))
       }
     }
   }
@@ -297,6 +377,12 @@ object FPPerformanceTest extends Bench.OfflineReport {
           }
       }
     }
+
+    measure method "sulzmann1HighContentionCase" in {
+      using(SULZMANN_HIGH_CONTENTION_CASE) in {
+        r => sulzmannPerf1Prim(r, ex => new PrimMVar(ex))
+      }
+    }
   }
 
   performance of "PrimSTM" in {
@@ -355,6 +441,12 @@ object FPPerformanceTest extends Bench.OfflineReport {
             nested.get
             ex.shutdown
           }
+      }
+    }
+
+    measure method "sulzmann1HighContentionCase" in {
+      using(SULZMANN_HIGH_CONTENTION_CASE) in {
+        r => sulzmannPerf1Prim(r, ex => new PrimSTM(ex))
       }
     }
   }
@@ -425,5 +517,100 @@ object FPPerformanceTest extends Bench.OfflineReport {
     successfulP.trySuccess(i)
     val p = successfulP.followedByWith(t => f)
     if (i > 1) nestedFollowedByWithsStm(p, i - 1, ex) else p
+  }
+
+  /*
+    -- For each promise pi taken from [p1,...,pn]
+--     m times onComplete pi incCount
+--     k times tryComplete pi v
+--     get pi
+-- wait for counter to reach n*m (all onCompletes are processed)
+*/
+  def sulzmannPerf1TwitterUtil(r: Tuple4[Int, Int, Int, Int]) {
+    val n = r._1
+    val m = r._2
+    val k = r._3
+    val cores = r._4
+    val counter = new Synchronizer(n * m)
+    val ex = getTwitterUtilExecutor(cores)
+
+    val promises = for (i <- 0 to n) yield com.twitter.util.Promise.apply[Int]
+
+    promises.foreach(p => {
+      0 to m foreach (_ => {
+        ex.submit(new Runnable {
+          // TODO submit the callback to the executor WHEN IT IS CALLED, in Haskell we use forkIO
+          override def run = p.respond(t => counter.increment)
+        })
+      })
+      0 to k foreach (_ => {
+        ex.submit(new Runnable {
+          override def run = p.updateIfEmpty(Return(1))
+        })
+      })
+    })
+
+    // get ps
+    promises.foreach(p => com.twitter.util.Await.result(p)) // TODO Try it without get
+
+    // wait for counter to reach n*m
+    counter.await
+    ex.shutdownNow
+  }
+
+  def sulzmannPerf1ScalaFP(r: Tuple4[Int, Int, Int, Int]) {
+    val n = r._1
+    val m = r._2
+    val k = r._3
+    val cores = r._4
+    val counter = new Synchronizer(n * m)
+    val ex = getScalaFPExecutor(cores)
+    val executionService = ex._1
+    val executionContext = ex._2
+
+    val promises = for (i <- 0 to n) yield scala.concurrent.Promise.apply[Int]
+
+    promises.foreach(p => {
+      0 to m foreach (_ => {
+        executionService.submit(new Runnable {
+          override def run(): Unit = p.future.onComplete(t => counter.increment)(executionContext)
+        })
+      })
+      0 to k foreach (_ => {
+        executionService.submit(new Runnable {
+          override def run(): Unit = p.tryComplete(Success(1))
+        })
+      })
+    })
+
+    // get ps
+    promises.foreach(p => Await.result(p.future, Duration.Inf)) // TODO Try it without get
+
+    // wait for counter to reach n*m
+    counter.await
+    executionService.shutdownNow
+  }
+
+  def sulzmannPerf1Prim(r: Tuple4[Int, Int, Int, Int], f: (Executor) => FP[Int]) {
+    val n = r._1
+    val m = r._2
+    val k = r._3
+    val cores = r._4
+    val counter = new Synchronizer(n * m)
+    val ex = getPrimExecutor(cores)
+
+    val promises = for (i <- 0 to n) yield f.apply(ex)
+
+    promises.foreach(p => {
+      0 to m foreach (_ => ex.submit(() => p.onComplete(t => counter.increment)))
+      0 to k foreach (_ => ex.submit(() => p.trySuccess(1)))
+    })
+
+    // get ps
+    promises.foreach(p => p.get) // TODO Try it without get
+
+    // wait for counter to reach n*m
+    counter.await
+    ex.shutdown
   }
 }
