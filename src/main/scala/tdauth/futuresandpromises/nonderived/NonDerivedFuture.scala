@@ -37,7 +37,8 @@ class NonDerivedFuture[T](val future: scala.concurrent.Future[T], ex: Executor) 
 
   /**
    * Has to be implemented manually with the help of Future.find since there is no such method in Scala FP.
-   * TODO #17 Can it be implemented with Future.find. Apparently, the implementation looks like the search is done sequentially, waiting for one future, after another.
+   * TODO #17 Can it even be implemented with Future.find?
+   * Apparently, the implementation looks like the search is done sequentially, waiting for one future, after another.
    */
   override def firstSucc(other: Future[T]): Future[T] = {
     /*

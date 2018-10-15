@@ -1,5 +1,8 @@
 package tdauth.futuresandpromises.benchmarks
 
+import java.io.File
+import java.io.FileWriter
+import java.util.Locale
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.locks.ReentrantLock
@@ -50,10 +53,15 @@ class Synchronizer(max: Int) {
 
 /**
  * Compares the performance of our FP implementation to the performance of Scala FP and Twitter Util.
+ *
+ * TODO What about:
+ * - https://github.com/scalaz/scalaz/blob/series/7.3.x/concurrent/src/main/scala/scalaz/concurrent/MVar.scala
+ * - https://github.com/scalaz/scalaz/blob/series/7.3.x/concurrent/src/main/scala/scalaz/concurrent/Future.scala
+ * - https://github.com/scalaz/scalaz/blob/series/7.3.x/concurrent/src/main/scala/scalaz/concurrent/Chan.scala
  */
 object Benchmarks extends App {
   val ITERATIONS = 10
-  val CORES = Vector(1, 2, 4, 8)
+  val CORES = Vector(1, 2, 4, 8) // +1 for the main thread!
 
   // test 1
   val TEST_1_N = 10000
@@ -68,48 +76,76 @@ object Benchmarks extends App {
   // test 4
   val TEST_4_N = 2000000
 
-  runAllTests
+  deletePlotFiles
 
-  def time[R](block: => R): R = {
-    val t0 = System.nanoTime()
-    val result = block // call-by-name
-    val t1 = System.nanoTime()
-    printf("Elapsed time: " + (t1 - t0) + "ns")
-    result
+  //runAllTests
+  runAllTestsTwitterUtil
+
+  def getPlotFileName(testNumber: Int, plotFileSuffix: String) = "test" + testNumber + "_scala_" + plotFileSuffix + ".dat"
+
+  def deletePlotFiles() {
+    val files = for {
+      testNumber <- Vector(1, 2, 3, 4)
+      plotFileSuffix <- Vector("twitterutil", "scalafp", "cas", "mvar", "stm")
+
+    } yield new File(getPlotFileName(testNumber, plotFileSuffix))
+    files.filter(_ exists).foreach(_ delete)
   }
 
-  def execTest(t: () => Unit): Double = {
+  def writeEntryIntoPlotFile(plotFilePath: String, cores: Int, time: Double) {
+    val fileWriter = new FileWriter(plotFilePath, true)
+    try {
+      fileWriter.append("%d  %.2f\n".formatLocal(Locale.US, cores, time))
+    } finally fileWriter.close()
+  }
+
+  /**
+   * Measures the execution time of t and returns it in ns.
+   * The returned value can be substracted from the total execution time to ignore it.
+   */
+  def benchmarkSuspend(t: => Unit): Long = {
+    val start = System.nanoTime()
+    t
+    val fin = System.nanoTime()
+    (fin - start)
+  }
+
+  /**
+   * @param t The test function which returns time which has to be substracted from the exectuion time since it should not be measured.
+   */
+  def execTest(t: () => Long): Double = {
     System.gc
     val start = System.nanoTime()
-    t()
+    val difference = t()
     val fin = System.nanoTime()
-    val result = (fin - start)
+    val result = (fin - start) - difference
     val seconds = result.toDouble / 1000000000.0
-    printf("Time: %.2fs\n", seconds)
+    printf("Time: %.2fs, Time in ns: %d, Excluded time in ns: %d\n", seconds, result, difference)
     seconds
   }
 
-  def runTest(n: Int, t: () => Unit) {
-    val rs = for (i <- (1 to n)) yield execTest(t)
+  def runTest(plotFileSuffix: String, testNumber: Int, cores: Int, t: () => Long) {
+    val rs = for (i <- (1 to ITERATIONS)) yield execTest(t)
     val xs = rs.sorted
     val low = xs.head
     val high = xs.last
     val m = xs.length.toDouble
     val av = xs.sum / m
     printf("low: %.2fs high: %.2fs avrg: %.2fs\n", low, high, av)
+    writeEntryIntoPlotFile(getPlotFileName(testNumber, plotFileSuffix), cores, av)
   }
 
-  def runAll(n: Int, t0: () => Unit, t1: () => Unit, t2: () => Unit, t3: () => Unit, t4: () => Unit): Unit = {
+  def runAll(testNumber: Int, cores: Int, t0: () => Long, t1: () => Long, t2: () => Long, t3: () => Long, t4: () => Long): Unit = {
     println("Twitter Util")
-    runTest(n, t0)
+    runTest("twitterutil", testNumber, cores, t0)
     println("Scala FP")
-    runTest(n, t1)
+    runTest("scalafp", testNumber, cores, t1)
     println("Prim CAS")
-    runTest(n, t2)
+    runTest("cas", testNumber, cores, t2)
     println("Prim MVar")
-    runTest(n, t3)
+    runTest("mvar", testNumber, cores, t3)
     println("Prim STM")
-    runTest(n, t4)
+    runTest("stm", testNumber, cores, t4)
   }
 
   def test1(cores: Int) {
@@ -117,7 +153,8 @@ object Benchmarks extends App {
     val m = TEST_1_M
     val k = TEST_1_K
     runAll(
-      ITERATIONS,
+      1,
+      cores,
       () => perf1TwitterUtil(n, m, k, cores),
       () => perf1ScalaFP(n, m, k, cores),
       () => perf1Prim(n, m, k, cores, ex => new PrimCAS(ex)),
@@ -130,7 +167,8 @@ object Benchmarks extends App {
     val m = TEST_2_M
     val k = TEST_2_K
     runAll(
-      ITERATIONS,
+      2,
+      cores,
       () => perf1TwitterUtil(n, m, k, cores),
       () => perf1ScalaFP(n, m, k, cores),
       () => perf1Prim(n, m, k, cores, ex => new PrimCAS(ex)),
@@ -141,7 +179,8 @@ object Benchmarks extends App {
   def test3(cores: Int) {
     val n = TEST_3_N
     runAll(
-      ITERATIONS,
+      3,
+      cores,
       () => perf2TwitterUtil(n, cores),
       () => perf2ScalaFP(n, cores),
       () => perf2Prim(n, cores, ex => new PrimCAS(ex)),
@@ -152,7 +191,8 @@ object Benchmarks extends App {
   def test4(cores: Int) {
     val n = TEST_4_N
     runAll(
-      ITERATIONS,
+      4,
+      cores,
       () => perf3TwitterUtil(n, cores),
       () => perf3ScalaFP(n, cores),
       () => perf3Prim(n, cores, ex => new PrimCAS(ex)),
@@ -173,6 +213,21 @@ object Benchmarks extends App {
       println(coresSeparator)
       t(c)
     })
+  }
+
+  def runTestTwitterUtil(testNumber: Int, cores: Int, test: () => Long) {
+    println("Twitter Util")
+    runTest("twitterutil", testNumber, cores, test)
+  }
+  def runTest1TwitterUtil = runTestForCores("Test 1", cores => runTestTwitterUtil(1, cores, () => perf1TwitterUtil(TEST_1_N, TEST_1_M, TEST_1_K, cores)))
+  def runTest2TwitterUtil = runTestForCores("Test 2", cores => runTestTwitterUtil(2, cores, () => perf1TwitterUtil(TEST_2_N, TEST_2_M, TEST_2_K, cores)))
+  def runTest3TwitterUtil = runTestForCores("Test 3", cores => runTestTwitterUtil(3, cores, () => perf2TwitterUtil(TEST_3_N, cores)))
+  def runTest4TwitterUtil = runTestForCores("Test 4", cores => runTestTwitterUtil(4, cores, () => perf3TwitterUtil(TEST_4_N, cores)))
+  def runAllTestsTwitterUtil = {
+    runTest1TwitterUtil
+    runTest2TwitterUtil
+    runTest3TwitterUtil
+    runTest4TwitterUtil
   }
 
   def runTest1 = runTestForCores("Test 1", test1)
@@ -199,16 +254,20 @@ object Benchmarks extends App {
     new JavaExecutor(executionService)
   }
 
-  def perf1TwitterUtil(n: Int, m: Int, k: Int, cores: Int) {
+  def perf1TwitterUtil(n: Int, m: Int, k: Int, cores: Int): Long = {
     val counter = new Synchronizer(n * m)
-    val ex = getTwitterUtilExecutor(cores)
+    var ex: com.twitter.util.ExecutorServiceFuturePool = null
+    val difference = benchmarkSuspend { ex = getTwitterUtilExecutor(cores) }
 
     val promises = (1 to n).map(_ => com.twitter.util.Promise[Int])
 
     promises.foreach(p => {
       1 to m foreach (_ => {
         ex.executor.submit(new Runnable {
-          override def run(): Unit = p.respond(t => counter.increment) // TODO How to pass ex, so the callback is submitted to the executor?
+          /*
+           * We cannot use respond for Twitter Util since there is no way of specifying the executor for the callback.
+           */
+          override def run(): Unit = p.transform(t => ex(counter.increment))
         })
       })
       1 to k foreach (_ => {
@@ -223,11 +282,13 @@ object Benchmarks extends App {
 
     // wait for counter to reach n*m
     counter.await
-    ex.executor.shutdownNow
+
+    difference + benchmarkSuspend { ex.executor.shutdownNow }
   }
 
-  def perf2TwitterUtil(n: Int, cores: Int) {
-    val ex = getTwitterUtilExecutor(cores)
+  def perf2TwitterUtil(n: Int, cores: Int): Long = {
+    var ex: com.twitter.util.ExecutorServiceFuturePool = null
+    val difference = benchmarkSuspend { ex = getTwitterUtilExecutor(cores) }
 
     val promises = (1 to n).map(_ => com.twitter.util.Promise[Int])
 
@@ -235,12 +296,16 @@ object Benchmarks extends App {
       val p1 = if (rest.size > 0) rest(0) else null
       val p2 = if (rest.size > 1) rest(1) else null
       if (p1 ne null) {
-        p1.respond(t => {
-          if (p2 ne null) {
-            p2.setValue(1)
-            registerOnComplete(rest.tail)
-          }
-        }) // TODO How to pass ex, so the callback is submitted to the executor?
+        /*
+         * We cannot use respond for Twitter Util since there is no way of specifying the executor for the callback.
+         */
+        p1.transform(t =>
+          ex({
+            if (p2 ne null) {
+              p2.setValue(1)
+              registerOnComplete(rest.tail)
+            }
+          }))
       }
     }
 
@@ -248,11 +313,12 @@ object Benchmarks extends App {
 
     promises(0).setValue(1)
     com.twitter.util.Await.result(promises.last)
-    ex.executor.shutdownNow
+    difference + benchmarkSuspend { ex.executor.shutdownNow }
   }
 
-  def perf3TwitterUtil(n: Int, cores: Int) {
-    val ex = getTwitterUtilExecutor(cores)
+  def perf3TwitterUtil(n: Int, cores: Int): Long = {
+    var ex: com.twitter.util.ExecutorServiceFuturePool = null
+    val difference = benchmarkSuspend { ex = getTwitterUtilExecutor(cores) }
 
     val promises = (1 to n).map(_ => com.twitter.util.Promise[Int])
 
@@ -260,11 +326,16 @@ object Benchmarks extends App {
       val p1 = if (rest.size > 0) rest(0) else null
       val p2 = if (rest.size > 1) rest(1) else null
       if (p1 ne null) {
-        p1.respond(t => {
-          if (p2 ne null) {
-            p2.setValue(1)
-          }
-        }) // TODO How to pass ex, so the callback is submitted to the executor?
+        /*
+         * We cannot use respond for Twitter Util since there is no way of specifying the executor for the callback.
+         */
+        p1.transform(t => {
+          ex({
+            if (p2 ne null) {
+              p2.setValue(1)
+            }
+          })
+        })
 
         if (p2 ne null) {
           registerOnComplete(rest.tail)
@@ -276,12 +347,13 @@ object Benchmarks extends App {
 
     promises(0).setValue(1)
     com.twitter.util.Await.result(promises.last)
-    ex.executor.shutdownNow
+    difference + benchmarkSuspend { ex.executor.shutdownNow }
   }
 
-  def perf1ScalaFP(n: Int, m: Int, k: Int, cores: Int) {
+  def perf1ScalaFP(n: Int, m: Int, k: Int, cores: Int): Long = {
     val counter = new Synchronizer(n * m)
-    val ex = getScalaFPExecutor(cores)
+    var ex: Tuple2[ExecutorService, ExecutionContext] = null
+    val difference = benchmarkSuspend { ex = getScalaFPExecutor(cores) }
     val executionService = ex._1
     val executionContext = ex._2
 
@@ -305,11 +377,12 @@ object Benchmarks extends App {
 
     // wait for counter to reach n*m
     counter.await
-    executionService.shutdownNow
+    difference + benchmarkSuspend { executionService.shutdownNow }
   }
 
-  def perf2ScalaFP(n: Int, cores: Int) {
-    val ex = getScalaFPExecutor(cores)
+  def perf2ScalaFP(n: Int, cores: Int): Long = {
+    var ex: Tuple2[ExecutorService, ExecutionContext] = null
+    val difference = benchmarkSuspend { ex = getScalaFPExecutor(cores) }
     val executionService = ex._1
     val executionContext = ex._2
 
@@ -332,11 +405,12 @@ object Benchmarks extends App {
 
     promises(0).trySuccess(1)
     Await.result(promises.last.future, Duration.Inf)
-    executionService.shutdownNow
+    difference + benchmarkSuspend { executionService.shutdownNow }
   }
 
-  def perf3ScalaFP(n: Int, cores: Int) {
-    val ex = getScalaFPExecutor(cores)
+  def perf3ScalaFP(n: Int, cores: Int): Long = {
+    var ex: Tuple2[ExecutorService, ExecutionContext] = null
+    val difference = benchmarkSuspend { ex = getScalaFPExecutor(cores) }
     val executionService = ex._1
     val executionContext = ex._2
 
@@ -362,13 +436,13 @@ object Benchmarks extends App {
 
     promises(0).trySuccess(1)
     Await.result(promises.last.future, Duration.Inf)
-    executionService.shutdownNow
+    difference + benchmarkSuspend { executionService.shutdownNow }
   }
 
-  def perf1Prim(n: Int, m: Int, k: Int, cores: Int, f: (Executor) => FP[Int]) {
+  def perf1Prim(n: Int, m: Int, k: Int, cores: Int, f: (Executor) => FP[Int]): Long = {
     val counter = new Synchronizer(n * m)
-    val ex = getPrimExecutor(cores)
-
+    var ex: Executor = null
+    val difference = benchmarkSuspend { ex = getPrimExecutor(cores) }
     val promises = (1 to n).map(_ => f(ex))
 
     promises.foreach(p => {
@@ -381,11 +455,12 @@ object Benchmarks extends App {
 
     // wait for counter to reach n*m
     counter.await
-    ex.shutdown
+    difference + benchmarkSuspend { ex.shutdown }
   }
 
-  def perf2Prim(n: Int, cores: Int, f: (Executor) => FP[Int]) {
-    val ex = getPrimExecutor(cores)
+  def perf2Prim(n: Int, cores: Int, f: (Executor) => FP[Int]): Long = {
+    var ex: Executor = null
+    val difference = benchmarkSuspend { ex = getPrimExecutor(cores) }
     val promises = (1 to n).map(_ => f(ex))
 
     def registerOnComplete(rest: Seq[FP[Int]]) {
@@ -405,11 +480,12 @@ object Benchmarks extends App {
 
     promises(0).trySuccess(1)
     promises.last.get
-    ex.shutdown
+    difference + benchmarkSuspend { ex.shutdown }
   }
 
-  def perf3Prim(n: Int, cores: Int, f: (Executor) => FP[Int]) {
-    val ex = getPrimExecutor(cores)
+  def perf3Prim(n: Int, cores: Int, f: (Executor) => FP[Int]): Long = {
+    var ex: Executor = null
+    val difference = benchmarkSuspend { ex = getPrimExecutor(cores) }
     val promises = (1 to n).map(_ => f(ex))
 
     def registerOnComplete(rest: Seq[FP[Int]]) {
@@ -422,9 +498,7 @@ object Benchmarks extends App {
           }
         })
 
-        if (p2 ne null) {
-          registerOnComplete(rest.tail)
-        }
+        registerOnComplete(rest.tail)
       }
     }
 
@@ -432,6 +506,6 @@ object Benchmarks extends App {
 
     promises(0).trySuccess(1)
     promises.last.get
-    ex.shutdown
+    difference + benchmarkSuspend { ex.shutdown }
   }
 }

@@ -7,7 +7,7 @@ import tdauth.futuresandpromises.Future
 import tdauth.futuresandpromises.Promise
 import tdauth.futuresandpromises.Try
 
-// TODO #18 Use Twitter's FuturePool instead?
+// TODO #18 Use Twitter's FuturePool instead? The executor does nothing for Twitter Util. It can only be used with flatMap/transform.
 class TwitterPromise[T](executor: Executor) extends Promise[T] {
   protected val promise = com.twitter.util.Promise.apply[T]
 
