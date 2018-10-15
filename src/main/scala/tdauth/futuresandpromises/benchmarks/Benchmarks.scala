@@ -78,8 +78,7 @@ object Benchmarks extends App {
 
   deletePlotFiles
 
-  //runAllTests
-  runAllTestsTwitterUtil
+  runAllTests
 
   def getPlotFileName(testNumber: Int, plotFileSuffix: String) = "test" + testNumber + "_scala_" + plotFileSuffix + ".dat"
 
@@ -213,21 +212,6 @@ object Benchmarks extends App {
       println(coresSeparator)
       t(c)
     })
-  }
-
-  def runTestTwitterUtil(testNumber: Int, cores: Int, test: () => Long) {
-    println("Twitter Util")
-    runTest("twitterutil", testNumber, cores, test)
-  }
-  def runTest1TwitterUtil = runTestForCores("Test 1", cores => runTestTwitterUtil(1, cores, () => perf1TwitterUtil(TEST_1_N, TEST_1_M, TEST_1_K, cores)))
-  def runTest2TwitterUtil = runTestForCores("Test 2", cores => runTestTwitterUtil(2, cores, () => perf1TwitterUtil(TEST_2_N, TEST_2_M, TEST_2_K, cores)))
-  def runTest3TwitterUtil = runTestForCores("Test 3", cores => runTestTwitterUtil(3, cores, () => perf2TwitterUtil(TEST_3_N, cores)))
-  def runTest4TwitterUtil = runTestForCores("Test 4", cores => runTestTwitterUtil(4, cores, () => perf3TwitterUtil(TEST_4_N, cores)))
-  def runAllTestsTwitterUtil = {
-    runTest1TwitterUtil
-    runTest2TwitterUtil
-    runTest3TwitterUtil
-    runTest4TwitterUtil
   }
 
   def runTest1 = runTestForCores("Test 1", test1)
