@@ -32,15 +32,6 @@ Futures in Scala FP can have multiple callbacks registered and have multi-read s
 ### Usage
 This basic example shows how to create futures with the Scala FP implementation: [Example.scala](./src/main/scala/tdauth/futuresandpromises/example/Example.scala)
 
-## Implementation based on CAS
-The package [cas](./src/main/scala/tdauth/futuresandpromises/cas) contains a CAS-based implementation of futures and promises.
-This is similar to the original Scala FP implementation.
-
-## Implementation based on STM
-The package [stm](./src/main/scala/tdauth/futuresandpromises/stm) contains an STM-based implementation of futures and promises.
-
-See <https://github.com/anschwar/FutureSTM> for another Scala implementation.
-
 ## Implementation based on Scala FP without Derived Methods
 There is another implementation located in the package [nonderived](./src/main/scala/tdauth/futuresandpromises/nonderived) which is based on the first Scala FP implementation.
 However, it implements all derived methods with methods which are already provided by Scala FP if it is possible.
@@ -62,6 +53,16 @@ The package [comprehensive](./src/main/scala/tdauth/futuresandpromises/comprehen
 The objects `ComprehensivePromise` and `ComprehensiveFuture` don't make much sense since we use the trait `Factory` for construction.
 Therefore, a factory has to be passed to many methods.
 
+## Primitive API
+Another approach is to derive the functionality on only a few primitives, defined in [Prim[T]](./src/main/scala/tdauth/futuresandpromises/Prim.scala)
+and derive all other combinators in [FP[T]](./src/main/scala/tdauth/futuresandpromises/FP.scala).
+We provide several implementations of this approach:
+
+* package [cas](./src/main/scala/tdauth/futuresandpromises/cas) contains a CAS-based implementation of futures and promises.
+This is similar to the original Scala FP implementation.
+* package [mvar](./src/main/scala/tdauth/futuresandpromises/mvar) contains an MVar-based implementation of futures and promises.
+* package [stm](./src/main/scala/tdauth/futuresandpromises/stm) contains an STM-based implementation of futures and promises. See <https://github.com/anschwar/FutureSTM> for another Scala implementation.
+
 ## Combinators
 The object [Combinators](./src/main/scala/tdauth/futuresandpromises/combinators/Combinators.scala) contains different implementations of the non-blocking combinators using each other.
 
@@ -81,7 +82,7 @@ The command `sbt clean coverage test coverageReport` generates coverage reports 
 
 ## Benchmarks
 [scalameter](https://scalameter.github.io/) is a Scala library which allows you to write benchmarks in Scala.
-The package [benchmarks](./src/test/scala/tdauth/futuresandpromises/benchmarks) contains benchmarks.
+At the moment, we do only provide benchmarks of our primitive implementations in [benchmarks](./src/main/scala/tdauth/futuresandpromises/benchmarks/Benchmarks.scala).
 
 ## API Documentation
 The API documentation can be generated with [scaladoc](https://docs.scala-lang.org/style/scaladoc.html) with the following command: `sbt doc`

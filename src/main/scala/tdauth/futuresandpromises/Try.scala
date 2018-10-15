@@ -23,7 +23,6 @@ class Try[T](t: scala.util.Try[T]) {
   /**
    * Gets the currently hold value of the Try.
    * @return Returns the currently hold value of the Try. If it has an exception, the exception is rethrown.
-   * @throws UsingUninitializedTry If there is neither a result value nor an exception, this exception will be thrown.
    */
   def get(): T = t.get
 

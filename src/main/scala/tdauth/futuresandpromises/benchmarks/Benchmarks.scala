@@ -239,7 +239,7 @@ object Benchmarks extends App {
   }
 
   def perf1TwitterUtil(n: Int, m: Int, k: Int, cores: Int): Long = {
-    val counter = new Synchronizer(n * m)
+    val counter = new Synchronizer(n * (m + k))
     var ex: com.twitter.util.ExecutorServiceFuturePool = null
     val difference = benchmarkSuspend { ex = getTwitterUtilExecutor(cores) }
 
@@ -256,15 +256,17 @@ object Benchmarks extends App {
       })
       1 to k foreach (_ => {
         ex.executor.submit(new Runnable {
-          override def run(): Unit = p.updateIfEmpty(com.twitter.util.Return(1))
+          override def run(): Unit = {
+            p.updateIfEmpty(com.twitter.util.Return(1))
+            counter.increment
+          }
         })
       })
     })
 
     // get ps
-    promises.foreach(p => com.twitter.util.Await.result(p)) // TODO Try it without get
+    promises.foreach(p => com.twitter.util.Await.result(p))
 
-    // wait for counter to reach n*m
     counter.await
 
     difference + benchmarkSuspend { ex.executor.shutdownNow }
@@ -335,7 +337,7 @@ object Benchmarks extends App {
   }
 
   def perf1ScalaFP(n: Int, m: Int, k: Int, cores: Int): Long = {
-    val counter = new Synchronizer(n * m)
+    val counter = new Synchronizer(n * (m + k))
     var ex: Tuple2[ExecutorService, ExecutionContext] = null
     val difference = benchmarkSuspend { ex = getScalaFPExecutor(cores) }
     val executionService = ex._1
@@ -351,15 +353,17 @@ object Benchmarks extends App {
       })
       1 to k foreach (_ => {
         executionService.submit(new Runnable {
-          override def run(): Unit = p.tryComplete(Success(1))
+          override def run(): Unit = {
+            p.tryComplete(Success(1))
+            counter.increment
+          }
         })
       })
     })
 
     // get ps
-    promises.foreach(p => Await.result(p.future, Duration.Inf)) // TODO Try it without get
+    promises.foreach(p => Await.result(p.future, Duration.Inf))
 
-    // wait for counter to reach n*m
     counter.await
     difference + benchmarkSuspend { executionService.shutdownNow }
   }
@@ -424,20 +428,22 @@ object Benchmarks extends App {
   }
 
   def perf1Prim(n: Int, m: Int, k: Int, cores: Int, f: (Executor) => FP[Int]): Long = {
-    val counter = new Synchronizer(n * m)
+    val counter = new Synchronizer(n * (m + k))
     var ex: Executor = null
     val difference = benchmarkSuspend { ex = getPrimExecutor(cores) }
     val promises = (1 to n).map(_ => f(ex))
 
     promises.foreach(p => {
       1 to m foreach (_ => ex.submit(() => p.onComplete(t => counter.increment)))
-      1 to k foreach (_ => ex.submit(() => p.trySuccess(1)))
+      1 to k foreach (_ => ex.submit(() => {
+        p.trySuccess(1)
+        counter.increment
+      }))
     })
 
     // get ps
-    promises.foreach(p => p.get) // TODO Try it without get
+    promises.foreach(p => p.get)
 
-    // wait for counter to reach n*m
     counter.await
     difference + benchmarkSuspend { ex.shutdown }
   }

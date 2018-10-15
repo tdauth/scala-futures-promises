@@ -40,7 +40,6 @@ trait FP[T] extends Prim[T] {
   def newFP[S](ex : Executor): FP[S] = newP[S](ex).asInstanceOf[FP[S]]
 
   // Basic promise methods:
-  // TODO #25 Haskell does not have executors
   // getExecutor is inherited by Prim[T]
   def tryComplete(t: Try[T]): Boolean
 
@@ -55,7 +54,6 @@ trait FP[T] extends Prim[T] {
   def trySuccess(v: T): Boolean = tryComplete(new Try(v))
   def tryFail(e: Throwable): Boolean = tryComplete(new Try(e))
   def tryCompleteWith(other: FP[T]): Unit = other.onComplete(this.tryComplete(_))
-  // TODO #25 Why call it trySuccWith in Haskell? -> trySuccessWith
   def trySuccessWith(other: FP[T]): Unit = other.onSuccess(this.trySuccess(_))
   def tryFailWith(other: FP[T]): Unit = other.onFail(this.tryFail(_))
 

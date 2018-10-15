@@ -8,7 +8,7 @@ import tdauth.futuresandpromises.stm.PrimSTM
 
 /**
  * Since it seems that the memory consumption by callbacks has been fixed and the benchmark from Scala FP does
- * not work anymore (see [[ScalaFPMemoryTest]]), we have to produce our own example based on the answer in
+ * not work anymore (see [[ScalaFPRecursiveMemoryTest]]), we have to produce our own example based on the answer in
  * [[https://users.scala-lang.org/t/how-does-promise-linking-work/3326 How does promise linking work?]].
  *
  * This produces a `java.lang.OutOfMemoryError: Java heap space` when no promise linking is implemented.
