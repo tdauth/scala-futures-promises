@@ -47,7 +47,7 @@ trait FP[T] extends Prim[T] {
   // TODO #25 isReady is missing from Haskell?
   // isReady is inherited by Prim[T]
   // TODO #25 Do we even need get? It is only for testing purposes -> explicit blocking.
-  def get: T = getP
+  // We have to use getP since the name get is already used by AtomicReference.
   // onComplete is inherited by Prim[T]
 
   // Derived promise methods:

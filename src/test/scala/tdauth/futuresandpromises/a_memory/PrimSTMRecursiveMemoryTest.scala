@@ -21,5 +21,5 @@ class PrimSTMRecursiveMemoryTest extends AbstractRecursiveMemoryTest[PrimSTM[Int
     p.followedByWith(f).asInstanceOf[PrimSTM[Int]]
   }
 
-  def syncFuture(f: PrimSTM[Int]) = f.get
+  def syncFuture(f: PrimSTM[Int]) = f.getP
 }

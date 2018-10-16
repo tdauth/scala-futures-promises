@@ -2,6 +2,7 @@ package tdauth.futuresandpromises.cas
 
 import java.util.concurrent.atomic.AtomicReference
 
+import scala.annotation.tailrec
 import scala.util.Left
 
 import tdauth.futuresandpromises.Executor
@@ -14,31 +15,28 @@ import tdauth.futuresandpromises.Try
  * Thread-safety by CAS operations.
  * This is similiar to Scala FP's implementation.
  */
-class PrimCAS[T](ex: Executor) extends FP[T] {
-  type Result = AtomicReference[Value]
-
-  var result = new Result(Right(List.empty[Callback]))
+class PrimCAS[T](ex: Executor) extends AtomicReference[FP[T]#Value](Right(List.empty[FP[T]#Callback])) with FP[T] {
 
   override def getExecutor: Executor = ex
 
   override def newP[S](ex: Executor): Prim[S] = new PrimCAS[S](ex)
 
-  override def getP: T = getResultWithMVar
+  override def getP: T = super[FP].getResultWithMVar
 
   override def isReady = {
-    val s = result.get
+    val s = get
     s match {
       case Left(_) => true
       case Right(_) => false
     }
   }
 
-  override def tryComplete(v: Try[T]): Boolean = {
-    val s = result.get
+  @tailrec override final def tryComplete(v: Try[T]): Boolean = {
+    val s = get
     s match {
       case Left(x) => false
       case Right(x) => {
-        if (result.compareAndSet(s, Left(v))) {
+        if (compareAndSet(s, Left(v))) {
           dispatchCallbacks(v, x)
           true
         } else {
@@ -48,13 +46,13 @@ class PrimCAS[T](ex: Executor) extends FP[T] {
     }
   }
 
-  override def onComplete(c: Callback): Unit = {
-    val s = result.get
+  @tailrec override final def onComplete(c: Callback): Unit = {
+    val s = get
     s match {
       case Left(x) => dispatchCallback(x, c)
       case Right(x) => {
         val callbacks = x :+ c
-        if (!result.compareAndSet(s, Right(callbacks))) onComplete(c)
+        if (!compareAndSet(s, Right(callbacks))) onComplete(c)
       }
     }
   }

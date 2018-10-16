@@ -39,7 +39,7 @@ trait Prim[T] {
 
   protected def dispatchCallbacks(v: Try[T], callbacks: Callbacks) = if (!callbacks.isEmpty) getExecutor.submit(() => { callbacks.foreach(c => c.apply(v)) })
 
-  protected def dispatchCallback(v: Try[T], c: Callback) = dispatchCallbacks(v, List(c))
+  protected def dispatchCallback(v: Try[T], c: Callback) = getExecutor.submit(() => { c.apply(v) })
 
   /**
    * This version is much simpler than the CompletionLatch from Scala FP's implementation.

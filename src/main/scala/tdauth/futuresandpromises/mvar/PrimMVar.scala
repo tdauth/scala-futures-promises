@@ -8,11 +8,9 @@ import tdauth.futuresandpromises.FP
 import tdauth.futuresandpromises.Prim
 import tdauth.futuresandpromises.Try
 
-class PrimMVar[T](ex: Executor) extends FP[T] {
-  type Result = SyncVar[Value]
+class PrimMVar[T](ex: Executor) extends SyncVar[FP[T]#Value] with FP[T] {
+  put(Right(List.empty[Callback]))
 
-  var result = new Result()
-  result.put(Right(List.empty[Callback]))
   /*
    * We need a second MVar to signal that the future has a result.
    */
@@ -24,7 +22,7 @@ class PrimMVar[T](ex: Executor) extends FP[T] {
 
   override def getP: T = {
     sig.get
-    result.get.left.get.get()
+    get.left.get.get()
   }
 
   /**
@@ -33,15 +31,15 @@ class PrimMVar[T](ex: Executor) extends FP[T] {
   override def isReady: Boolean = sig.isSet
 
   override def tryComplete(v: Try[T]): Boolean = {
-    val s = result.take()
+    val s = take()
     s match {
       case Left(_) => {
         // Put the value back.
-        result.put(s)
+        put(s)
         false
       }
       case Right(x) => {
-        result.put(Left(v))
+        put(Left(v))
         sig.put()
         dispatchCallbacks(v, x)
         true
@@ -50,14 +48,14 @@ class PrimMVar[T](ex: Executor) extends FP[T] {
   }
 
   override def onComplete(c: Callback): Unit = {
-    val s = result.take()
+    val s = take()
     s match {
       case Left(x) => {
-        result.put(s)
+        put(s)
         dispatchCallback(x, c)
       }
       case Right(x) => {
-        result.put(Right(x :+ c))
+        put(Right(x :+ c))
       }
     }
   }

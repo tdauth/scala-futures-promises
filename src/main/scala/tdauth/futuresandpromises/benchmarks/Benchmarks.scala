@@ -250,6 +250,7 @@ object Benchmarks extends App {
         ex.executor.submit(new Runnable {
           /*
            * We cannot use respond for Twitter Util since there is no way of specifying the executor for the callback.
+           * Without transform the benchmark performs much faster.
            */
           override def run(): Unit = p.transform(t => ex(counter.increment))
         })
@@ -442,7 +443,7 @@ object Benchmarks extends App {
     })
 
     // get ps
-    promises.foreach(p => p.get)
+    promises.foreach(p => p.getP)
 
     counter.await
     difference + benchmarkSuspend { ex.shutdown }
@@ -469,7 +470,7 @@ object Benchmarks extends App {
     registerOnComplete(promises)
 
     promises(0).trySuccess(1)
-    promises.last.get
+    promises.last.getP
     difference + benchmarkSuspend { ex.shutdown }
   }
 
@@ -495,7 +496,7 @@ object Benchmarks extends App {
     registerOnComplete(promises)
 
     promises(0).trySuccess(1)
-    promises.last.get
+    promises.last.getP
     difference + benchmarkSuspend { ex.shutdown }
   }
 }

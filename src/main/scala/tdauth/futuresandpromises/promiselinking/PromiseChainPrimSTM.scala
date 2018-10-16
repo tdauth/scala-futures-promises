@@ -39,7 +39,7 @@ object PromiseChainPrimSTM extends App {
 
     // Never reached code if there is an OutOfMemoryError exception:
     start.trySuccess(())
-    println("current: " + current.get)
+    println("current: " + current.getP)
   }
 
   println("Done!")
