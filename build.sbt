@@ -30,11 +30,3 @@ testFrameworks += new TestFramework("org.scalameter.ScalaMeterFramework")
 parallelExecution in Test := false
 
 logBuffered in Test := false
-
-coverageEnabled := true
-
-coverageMinimum := 100
-
-coverageFailOnMinimum := false
-
-coverageHighlighting := true

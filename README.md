@@ -84,6 +84,17 @@ The command `sbt clean coverage test coverageReport` generates coverage reports 
 [scalameter](https://scalameter.github.io/) is a Scala library which allows you to write benchmarks in Scala.
 At the moment, we do only provide benchmarks of our primitive implementations in [benchmarks](./src/main/scala/tdauth/futuresandpromises/benchmarks/Benchmarks.scala).
 
+## Profiling
+For profiling you can use [VisualVM](https://visualvm.github.io/).
+Note that you have to create a standalone .jar file with `sbt assembly` to run it with the `java` command.
+First you have to start VisualVM and "Applications" -> "Profile Startup", set as "Profile Classes" the value "tdauth.futuresandpromises.**".
+Press "Continue" and press "Profile".
+Then run the Bash script [profilevisualvm.sh](./profilevisualvm.sh) which is an example script to profile the benchmarks.
+You have to change the path to your VisualVM location.
+
+An alternative to VisualVM is [jvmtop](https://github.com/patric-r/jvmtop).
+Run the Bash script [profilejvmtop.sh](./profilejvmtop.sh).
+
 ## API Documentation
 The API documentation can be generated with [scaladoc](https://docs.scala-lang.org/style/scaladoc.html) with the following command: `sbt doc`
 It will be generated into the directory `target/scala-<scala-version>/api/`.
