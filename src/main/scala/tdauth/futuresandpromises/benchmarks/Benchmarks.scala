@@ -79,6 +79,62 @@ object Benchmarks extends App {
   deletePlotFiles
 
   runAllTests
+  //runAllTestsTwitterUtil
+  //runTest1TwitterUtil
+  //runTest2TwitterUtil
+
+  // compare Scala FP perf1 with our CAS perf1, we use @tailrec now and could also do a NOOP optimization
+  // TODO Look at Scala's compile flags for relases.
+  //runAllTestsScalaFP
+  //runAllTestsPrimCas
+  // TEST Reduce number of cores and iterations to use it with VisualVM
+  //runTest1PrimCas
+  //runTest1ScalaFP
+
+  def runTestScalaFP(testNumber: Int, cores: Int, test: () => Long) {
+    println("Scala FP")
+    runTest("scalafp", testNumber, cores, test)
+  }
+  def runTest1ScalaFP = runTestForCores("Test 1", cores => runTestScalaFP(1, cores, () => perf1ScalaFP(TEST_1_N, TEST_1_M, TEST_1_K, cores)))
+  def runTest2ScalaFP = runTestForCores("Test 2", cores => runTestScalaFP(2, cores, () => perf1ScalaFP(TEST_2_N, TEST_2_M, TEST_2_K, cores)))
+  def runTest3ScalaFP = runTestForCores("Test 3", cores => runTestScalaFP(3, cores, () => perf2ScalaFP(TEST_3_N, cores)))
+  def runTest4ScalaFP = runTestForCores("Test 4", cores => runTestScalaFP(4, cores, () => perf3ScalaFP(TEST_4_N, cores)))
+  def runAllTestsScalaFP = {
+    runTest1ScalaFP
+    runTest2ScalaFP
+    runTest3ScalaFP
+    runTest4ScalaFP
+  }
+
+  def runTestPrimCAS(testNumber: Int, cores: Int, test: () => Long) {
+    println("Prim CAS")
+    runTest("cas", testNumber, cores, test)
+  }
+  def runTest1PrimCas = runTestForCores("Test 1", cores => runTestPrimCAS(1, cores, () => perf1Prim(TEST_1_N, TEST_1_M, TEST_1_K, cores, ex => new PrimCAS(ex))))
+  def runTest2PrimCas = runTestForCores("Test 2", cores => runTestPrimCAS(2, cores, () => perf1Prim(TEST_2_N, TEST_2_M, TEST_2_K, cores, ex => new PrimCAS(ex))))
+  def runTest3PrimCas = runTestForCores("Test 3", cores => runTestPrimCAS(3, cores, () => perf2Prim(TEST_3_N, cores, ex => new PrimCAS(ex))))
+  def runTest4PrimCas = runTestForCores("Test 4", cores => runTestPrimCAS(4, cores, () => perf3Prim(TEST_4_N, cores, ex => new PrimCAS(ex))))
+  def runAllTestsPrimCas = {
+    runTest1PrimCas
+    runTest2PrimCas
+    runTest3PrimCas
+    runTest4PrimCas
+  }
+
+  def runTestTwitterUtil(testNumber: Int, cores: Int, test: () => Long) {
+    println("Twitter Util")
+    runTest("twitterutil", testNumber, cores, test)
+  }
+  def runTest1TwitterUtil = runTestForCores("Test 1", cores => runTestTwitterUtil(1, cores, () => perf1TwitterUtil(TEST_1_N, TEST_1_M, TEST_1_K, cores)))
+  def runTest2TwitterUtil = runTestForCores("Test 2", cores => runTestTwitterUtil(2, cores, () => perf1TwitterUtil(TEST_2_N, TEST_2_M, TEST_2_K, cores)))
+  def runTest3TwitterUtil = runTestForCores("Test 3", cores => runTestTwitterUtil(3, cores, () => perf2TwitterUtil(TEST_3_N, cores)))
+  def runTest4TwitterUtil = runTestForCores("Test 4", cores => runTestTwitterUtil(4, cores, () => perf3TwitterUtil(TEST_4_N, cores)))
+  def runAllTestsTwitterUtil = {
+    runTest1TwitterUtil
+    runTest2TwitterUtil
+    runTest3TwitterUtil
+    runTest4TwitterUtil
+  }
 
   def getPlotFileName(testNumber: Int, plotFileSuffix: String) = "test" + testNumber + "_scala_" + plotFileSuffix + ".dat"
 
