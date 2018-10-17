@@ -3,19 +3,21 @@ package tdauth.futuresandpromises
 import scala.concurrent.SyncVar
 import scala.annotation.tailrec
 
-trait CallbackEntry {
+private[futuresandpromises] trait CallbackEntry {
 }
 
 /**
- * Backwards linked list of callbacks.
- * This should improve the performance on appending elements.
+ * Single backwards linked list of callbacks.
+ * When appending a callback, it will only be reversed link and the current link will be replaced by the new element.
+ * This should improve the performance on appending elements compared to storing the whole list.
+ * This does also mean that when the callbacks are called, they will be called in reverse order.
  */
-final class LinkedCallbackEntry[T]( final val c: (Try[T]) => Unit, final val previous: LinkedCallbackEntry[T]) extends CallbackEntry {
+private[futuresandpromises] class LinkedCallbackEntry[T]( final val c: (Try[T]) => Unit, final val prev: LinkedCallbackEntry[T] = null) extends CallbackEntry {
 }
-final class EmptyCallbackEntry extends CallbackEntry
+private[futuresandpromises] final class EmptyCallbackEntry extends CallbackEntry
 
 object Prim {
-  final val Noop = new EmptyCallbackEntry
+  private[futuresandpromises] final val Noop = new EmptyCallbackEntry
 }
 
 /**
@@ -53,22 +55,16 @@ trait Prim[T] {
     s.take().get()
   }
 
-  protected def appendCallback(callbacks: CallbackEntry, c: Callback): LinkedCallbackEntry = if (callbacks.isInstanceOf[LinkedCallbackEntry]) new LinkedCallbackEntry(c, callbacks.asInstanceOf[LinkedCallbackEntry]) else new LinkedCallbackEntry(c, null)
+  protected def appendCallback(callbacks: CallbackEntry, c: Callback): CallbackEntry = if (callbacks.isInstanceOf[LinkedCallbackEntry]) new LinkedCallbackEntry(c, callbacks.asInstanceOf[LinkedCallbackEntry]) else new LinkedCallbackEntry(c)
 
   protected def dispatchCallback(v: Try[T], c: Callback) = getExecutor.submit(() => c.apply(v))
 
-  protected def dispatchCallbacks(v: Try[T], callbacks: CallbackEntry) = {
-    if (callbacks.isInstanceOf[LinkedCallbackEntry]) {
-      getExecutor.submit(() => {
-        applyCallbacks(v, callbacks.asInstanceOf[LinkedCallbackEntry])
-      })
-    }
-  }
+  protected def dispatchCallbacks(v: Try[T], callbacks: CallbackEntry) = if (!callbacks.isInstanceOf[EmptyCallbackEntry]) getExecutor.submit(() => applyCallbacks(v, callbacks.asInstanceOf[LinkedCallbackEntry]))
 
-  // TODO calls the list of callbacks in reverse order
+  // TODO Reverse chain before? Scala FP makes no guarantees about the order of callbacks.
   @tailrec protected final def applyCallbacks(v: Try[T], callbackEntry: LinkedCallbackEntry) {
     callbackEntry.c.apply(v)
-    if (callbackEntry.previous ne null) applyCallbacks(v, callbackEntry.previous.asInstanceOf[LinkedCallbackEntry])
+    if (callbackEntry.prev ne null) applyCallbacks(v, callbackEntry.prev)
   }
 
   /**

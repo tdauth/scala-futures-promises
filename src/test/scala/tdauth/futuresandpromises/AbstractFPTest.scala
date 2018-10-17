@@ -1,6 +1,7 @@
 package tdauth.futuresandpromises
 
 import scala.concurrent.SyncVar
+import scala.collection.immutable.List
 
 abstract class AbstractFPTest extends AbstractUnitSpec {
 
@@ -117,6 +118,46 @@ abstract class AbstractFPTest extends AbstractUnitSpec {
     val p = getFP
     val f = p.future[String](() => throw new RuntimeException("Failure!"))
     the[RuntimeException] thrownBy f.getP should have message "Failure!"
+  }
+
+  /**
+   * Scala FP makes no guarantees about the execution order of callbacks.
+   * We can guarantee that they are executed in reverse order.
+   */
+  "onComplete" should "register multiple callbacks which are all called in the correct order" in {
+    val p = getFP
+    val s = new SyncVar[List[Int]]
+    val l = new SyncVar[Unit]
+    s.put(List())
+    1 to 10 foreach (i => p.onComplete(_ => {
+      val v = s.take()
+      s.put(v :+ i)
+      if (i == 1) l.put()
+    }))
+    p.trySuccess(10) should be(true)
+    l.get
+    val finalResult = s.get
+    finalResult should be(List(10, 9, 8, 7, 6, 5, 4, 3, 2, 1))
+  }
+
+  /**
+   * When the promise is already completed, the callbacks will be submitted immediately and therefore executed in the
+   * correct order.
+   */
+  it should "register multiple callbacks on a completed promise which are all called in the correct order" in {
+    val p = getFP
+    p.trySuccess(10) should be(true)
+    val s = new SyncVar[List[Int]]
+    val l = new SyncVar[Unit]
+    s.put(List())
+    1 to 10 foreach (i => p.onComplete(_ => {
+      val v = s.take()
+      s.put(v :+ i)
+      if (i == 10) l.put()
+    }))
+    l.get
+    val finalResult = s.get
+    finalResult should be(List(1, 2, 3, 4, 5, 6, 7, 8, 9, 10))
   }
 
   "onSuccess" should "register a callback which is called" in {
