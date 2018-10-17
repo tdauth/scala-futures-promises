@@ -15,7 +15,7 @@ import tdauth.futuresandpromises.Try
  * Thread-safety by CAS operations.
  * This is similiar to Scala FP's implementation.
  */
-class PrimCAS[T](ex: Executor) extends AtomicReference[FP[T]#Value](Right(List.empty[FP[T]#Callback])) with FP[T] {
+class PrimCAS[T](ex: Executor) extends AtomicReference[FP[T]#Value](Right(Prim.Noop)) with FP[T] {
 
   override def getExecutor: Executor = ex
 
@@ -50,10 +50,7 @@ class PrimCAS[T](ex: Executor) extends AtomicReference[FP[T]#Value](Right(List.e
     val s = get
     s match {
       case Left(x) => dispatchCallback(x, c)
-      case Right(x) => {
-        val callbacks = x :+ c
-        if (!compareAndSet(s, Right(callbacks))) onComplete(c)
-      }
+      case Right(x) => if (!compareAndSet(s, Right(appendCallback(x, c)))) onComplete(c)
     }
   }
 }

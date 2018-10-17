@@ -9,7 +9,7 @@ import tdauth.futuresandpromises.Prim
 import tdauth.futuresandpromises.Try
 
 class PrimMVar[T](ex: Executor) extends SyncVar[FP[T]#Value] with FP[T] {
-  put(Right(List.empty[Callback]))
+  put(Right(Prim.Noop))
 
   /*
    * We need a second MVar to signal that the future has a result.
@@ -54,9 +54,7 @@ class PrimMVar[T](ex: Executor) extends SyncVar[FP[T]#Value] with FP[T] {
         put(s)
         dispatchCallback(x, c)
       }
-      case Right(x) => {
-        put(Right(x :+ c))
-      }
+      case Right(x) => put(Right(appendCallback(x, c)))
     }
   }
 }

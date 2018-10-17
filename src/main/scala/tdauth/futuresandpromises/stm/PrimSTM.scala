@@ -14,7 +14,7 @@ import tdauth.futuresandpromises.Prim
 class PrimSTM[T](ex: Executor) extends FP[T] {
 
   // TODO Is there some way to extend this ref value?
-  var result: Ref[Value] = Ref(Right(List.empty[Callback]))
+  var result: Ref[Value] = Ref(Right(Prim.Noop))
 
   override def getExecutor: Executor = ex
 
@@ -57,9 +57,7 @@ class PrimSTM[T](ex: Executor) extends FP[T] {
       val s = result()
       s match {
         case Left(x) => dispatchCallback(x, c)
-        case Right(x) => {
-          result() = Right(x :+ c)
-        }
+        case Right(x) => result() = Right(appendCallback(x, c))
       }
     }
   }
