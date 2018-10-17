@@ -78,6 +78,7 @@ object Benchmarks extends App {
 
   deletePlotFiles
 
+  printf("We have %d available processors.\n", Runtime.getRuntime().availableProcessors())
   runAllTests
   //runAllTestsTwitterUtil
   //runTest1TwitterUtil
