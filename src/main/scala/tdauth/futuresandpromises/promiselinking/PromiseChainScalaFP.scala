@@ -6,7 +6,7 @@ import scala.concurrent.duration.Duration
 
 // TODO #22 Actually this should inherit the DefaultPromise! Otherwise, it might get released since we only need its field p!
 class PromiseChainScalaFP(arraySize: Int) {
-  val p = Promise.apply[Unit]
+  val p = Promise[Unit]
   val array = new Array[Byte](arraySize)
 
   override def finalize = {

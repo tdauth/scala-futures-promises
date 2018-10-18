@@ -2,9 +2,12 @@ package tdauth.futuresandpromises.promiselinking
 
 import java.util.concurrent.atomic.AtomicInteger
 
+import scala.concurrent.SyncVar
+
 import com.twitter.util.Await
 import com.twitter.util.Promise
 import com.twitter.util.Return
+import com.twitter.util.Try
 
 /**
  * When `become` is called two times, all callbacks are moved into `p`.
@@ -15,18 +18,20 @@ import com.twitter.util.Return
  */
 object BecomeRaceTwitter extends App {
   val counter = new AtomicInteger(0)
-  val p0 = Promise.apply[Int]
-  val p1 = Promise.apply[Int]
-  val p2 = Promise.apply[Int]
+  val s = new SyncVar[Unit]
+  val p0 = Promise[Int]
+  val p1 = Promise[Int]
+  val p2 = Promise[Int]
 
-  def callback(msg: String) = {
-    counter.incrementAndGet()
-    println(msg)
+  def callback(msg: String, x: Try[Int]) = {
+    val v = counter.incrementAndGet()
+    println("%s: completes with value %d".format(msg, x.get))
+    if (v == 3) s.put()
   }
 
-  p0.respond(_ => callback("Respond p0"))
-  p1.respond(_ => callback("Respond p1"))
-  p2.respond(_ => callback("Respond p2"))
+  p0.respond(x => callback("Respond p0", x))
+  p1.respond(x => callback("Respond p1", x))
+  p2.respond(x => callback("Respond p2", x))
 
   // Consider that become cannot be used on a completed promises.
   p0.become(p1)
@@ -36,6 +41,7 @@ object BecomeRaceTwitter extends App {
   //p1.updateIfEmpty(Return(1))
   p2.updateIfEmpty(Return(2))
 
+  s.get
   val result = Await.result(p0)
   println("Result: " + result + " with a counter of " + counter.get)
   assert(counter.get == 3)

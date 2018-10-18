@@ -6,7 +6,9 @@ import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Promise
+import scala.concurrent.SyncVar
 import scala.concurrent.duration.Duration
+import scala.util.Try
 
 /**
  * The same as [[BecomeRaceTwitter]] but since Scala FP does not provide `become`, we have to call `flatMap` and
@@ -18,20 +20,23 @@ import scala.concurrent.duration.Duration
  * promise linking is not used by `tryCompleteWith`.
  */
 object BecomeRaceScalaFP extends App {
-  implicit val ec = ExecutionContext.fromExecutorService(Executors.newSingleThreadExecutor())
+  val ex = Executors.newSingleThreadExecutor()
+  implicit val ec = ExecutionContext.fromExecutorService(ex)
 
   val counter = new AtomicInteger(0)
-  val p1 = Promise.apply[Int]
-  val p2 = Promise.apply[Int]
+  val s = new SyncVar[Unit]
+  val p1 = Promise[Int]
+  val p2 = Promise[Int]
 
-  def callback(msg: String) = {
-    counter.incrementAndGet()
-    println(msg)
+  def callback(msg: String, x: Try[Int]) = {
+    val v = counter.incrementAndGet()
+    println("%s: completes with value %d".format(msg, x.get))
+    if (v == 3) s.put()
   }
 
-  //p0.future.onComplete(_ => callback("Respond p0"))
-  p1.future.onComplete(_ => callback("Respond p1"))
-  p2.future.onComplete(_ => callback("Respond p2"))
+  //p0.future.onComplete(x => callback("Respond p0", x))
+  p1.future.onComplete(x => callback("Respond p1", x))
+  p2.future.onComplete(x => callback("Respond p2", x))
 
   /*
    * The same as:
@@ -42,10 +47,10 @@ object BecomeRaceScalaFP extends App {
    * step 1: link from p1 to p0
    * step 2: no link from p2 to p0 since tryCompleteWith does not implement promise linking
    */
-  val tmp = Promise.apply[Int]
+  val tmp = Promise[Int]
   tmp.trySuccess(10)
   val p0 = tmp.future.flatMap(t => p1.future)
-  p0.onComplete(_ => callback("Respond p0"))
+  p0.onComplete(x => callback("Respond p0", x))
   /*
    * This does not create a link but leads to calling the callbacks of p1 when p2 is completed which is wrong!
    * This "hack" is possible since we know that the standard implementation is DefaultPromise.
@@ -56,8 +61,9 @@ object BecomeRaceScalaFP extends App {
   //p1.trySuccess(1)
   p2.trySuccess(2)
 
+  s.get
   val result = Await.result(p0, Duration.Inf)
   println("Result: " + result + " with a counter of " + counter.get)
   assert(counter.get == 3)
-  // TODO #22 Is still blocking.
+  ex.shutdown
 }
