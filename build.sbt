@@ -4,7 +4,7 @@ version := "1.0"
 
 organization := "tdauth"
 
-scalaVersion := "2.12.6"
+scalaVersion := "2.12.7"
 
 // set the main class for 'sbt run'
 mainClass in (Compile, run) := Some("tdauth.futuresandpromises.benchmarks.Benchmarks")

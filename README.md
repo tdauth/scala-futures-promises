@@ -91,6 +91,7 @@ First you have to start VisualVM and "Applications" -> "Profile Startup", set as
 Press "Continue" and press "Profile".
 Then run the Bash script [profilevisualvm.sh](./profilevisualvm.sh) which is an example script to profile the benchmarks.
 You have to change the path to your VisualVM location.
+Note that VisualVM instruments the code for profiling and slows it down massively.
 
 An alternative to VisualVM is [jvmtop](https://github.com/patric-r/jvmtop).
 Run the Bash script [profilejvmtop.sh](./profilejvmtop.sh).

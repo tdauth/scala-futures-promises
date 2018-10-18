@@ -14,6 +14,9 @@ private[futuresandpromises] trait CallbackEntry {
  */
 private[futuresandpromises] class LinkedCallbackEntry[T]( final val c: (Try[T]) => Unit, final val prev: LinkedCallbackEntry[T] = null) extends CallbackEntry {
 }
+/**
+ * Indicates that there is no callback.
+ */
 private[futuresandpromises] final class EmptyCallbackEntry extends CallbackEntry
 
 object Prim {
@@ -55,11 +58,11 @@ trait Prim[T] {
     s.take().get()
   }
 
-  protected def appendCallback(callbacks: CallbackEntry, c: Callback): CallbackEntry = if (callbacks.isInstanceOf[LinkedCallbackEntry]) new LinkedCallbackEntry(c, callbacks.asInstanceOf[LinkedCallbackEntry]) else new LinkedCallbackEntry(c)
+  protected def appendCallback(callbacks: CallbackEntry, c: Callback): CallbackEntry = if (callbacks ne Prim.Noop) new LinkedCallbackEntry(c, callbacks.asInstanceOf[LinkedCallbackEntry]) else new LinkedCallbackEntry(c)
 
   protected def dispatchCallback(v: Try[T], c: Callback) = getExecutor.submit(() => c.apply(v))
 
-  protected def dispatchCallbacks(v: Try[T], callbacks: CallbackEntry) = if (!callbacks.isInstanceOf[EmptyCallbackEntry]) getExecutor.submit(() => applyCallbacks(v, callbacks.asInstanceOf[LinkedCallbackEntry]))
+  protected def dispatchCallbacks(v: Try[T], callbacks: CallbackEntry) = if (callbacks ne Prim.Noop) getExecutor.submit(() => applyCallbacks(v, callbacks.asInstanceOf[LinkedCallbackEntry]))
 
   // TODO Reverse chain before? Scala FP makes no guarantees about the order of callbacks.
   @tailrec protected final def applyCallbacks(v: Try[T], callbackEntry: LinkedCallbackEntry) {

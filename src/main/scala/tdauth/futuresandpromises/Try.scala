@@ -13,7 +13,7 @@ import scala.util.control.NonFatal
  * This is because it is directly used as the result value of a future in Folly instead of nesting it in an optional value.
  * See the field `result_` in Folly's [[https://raw.githubusercontent.com/facebook/folly/master/folly/futures/detail/Core.h Core.h]].
  */
-class Try[T](t: scala.util.Try[T]) {
+final class Try[T](t: scala.util.Try[T]) {
 
   // Basic methods:
   def this(v: T) = this(Success(v))

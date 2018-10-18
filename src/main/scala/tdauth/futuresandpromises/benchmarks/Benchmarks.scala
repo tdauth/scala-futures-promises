@@ -5,6 +5,7 @@ import java.io.FileWriter
 import java.util.Locale
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import java.util.concurrent.ThreadFactory
 import java.util.concurrent.locks.ReentrantLock
 
 import scala.concurrent.Await
@@ -18,6 +19,15 @@ import tdauth.futuresandpromises.JavaExecutor
 import tdauth.futuresandpromises.cas.PrimCAS
 import tdauth.futuresandpromises.mvar.PrimMVar
 import tdauth.futuresandpromises.stm.PrimSTM
+
+class SimpleThreadFactory(prefix: String) extends ThreadFactory {
+  var c = 0
+  override def newThread(r: Runnable): Thread = {
+    val t = new Thread(r, "%s - %d".format(prefix, c))
+    c += 1
+    t
+  }
+}
 
 /**
  * Waits until the counter has reached max.
@@ -80,17 +90,15 @@ object Benchmarks extends App {
 
   printf("We have %d available processors.\n", Runtime.getRuntime().availableProcessors())
   runAllTests
-  //runAllTestsTwitterUtil
-  //runTest1TwitterUtil
-  //runTest2TwitterUtil
 
-  // compare Scala FP perf1 with our CAS perf1, we use @tailrec now and could also do a NOOP optimization
-  // TODO Look at Scala's compile flags for relases.
-  //runAllTestsScalaFP
-  //runAllTestsPrimCas
-  // TEST Reduce number of cores and iterations to use it with VisualVM
+  // compare all perf3
+  //runTest3ScalaFP
+  //runTest3PrimCas
   //runTest1PrimCas
+  //runTest1PrimMVar
+  //runTest1PrimStm
   //runTest1ScalaFP
+  //runTest1TwitterUtil
 
   def runTestScalaFP(testNumber: Int, cores: Int, test: () => Long) {
     println("Scala FP")
@@ -120,6 +128,36 @@ object Benchmarks extends App {
     runTest2PrimCas
     runTest3PrimCas
     runTest4PrimCas
+  }
+
+  def runTestPrimMVar(testNumber: Int, cores: Int, test: () => Long) {
+    println("Prim MVar")
+    runTest("mvar", testNumber, cores, test)
+  }
+  def runTest1PrimMVar = runTestForCores("Test 1", cores => runTestPrimMVar(1, cores, () => perf1Prim(TEST_1_N, TEST_1_M, TEST_1_K, cores, ex => new PrimMVar(ex))))
+  def runTest2PrimMVar = runTestForCores("Test 2", cores => runTestPrimMVar(2, cores, () => perf1Prim(TEST_2_N, TEST_2_M, TEST_2_K, cores, ex => new PrimMVar(ex))))
+  def runTest3PrimMVar = runTestForCores("Test 3", cores => runTestPrimMVar(3, cores, () => perf2Prim(TEST_3_N, cores, ex => new PrimMVar(ex))))
+  def runTest4PrimMVar = runTestForCores("Test 4", cores => runTestPrimMVar(4, cores, () => perf3Prim(TEST_4_N, cores, ex => new PrimMVar(ex))))
+  def runAllTestsPrimMVar = {
+    runTest1PrimMVar
+    runTest2PrimMVar
+    runTest3PrimMVar
+    runTest4PrimMVar
+  }
+
+  def runTestPrimStm(testNumber: Int, cores: Int, test: () => Long) {
+    println("Prim STM")
+    runTest("stm", testNumber, cores, test)
+  }
+  def runTest1PrimStm = runTestForCores("Test 1", cores => runTestPrimStm(1, cores, () => perf1Prim(TEST_1_N, TEST_1_M, TEST_1_K, cores, ex => new PrimSTM(ex))))
+  def runTest2PrimStm = runTestForCores("Test 2", cores => runTestPrimStm(2, cores, () => perf1Prim(TEST_2_N, TEST_2_M, TEST_2_K, cores, ex => new PrimSTM(ex))))
+  def runTest3PrimStm = runTestForCores("Test 3", cores => runTestPrimStm(3, cores, () => perf2Prim(TEST_3_N, cores, ex => new PrimSTM(ex))))
+  def runTest4PrimStm = runTestForCores("Test 4", cores => runTestPrimStm(4, cores, () => perf3Prim(TEST_4_N, cores, ex => new PrimSTM(ex))))
+  def runAllTestsPrimStm = {
+    runTest1PrimStm
+    runTest2PrimStm
+    runTest3PrimStm
+    runTest4PrimStm
   }
 
   def runTestTwitterUtil(testNumber: Int, cores: Int, test: () => Long) {
@@ -283,15 +321,19 @@ object Benchmarks extends App {
     runTest4
   }
 
-  def getTwitterUtilExecutor(n: Int) = com.twitter.util.FuturePool(Executors.newFixedThreadPool(n))
+  def threadFactory(prefix: String): ThreadFactory = new SimpleThreadFactory(prefix)
+
+  def fixedThreadPool(n: Int, prefix: String) = Executors.newFixedThreadPool(n, threadFactory(prefix))
+
+  def getTwitterUtilExecutor(n: Int) = com.twitter.util.FuturePool(fixedThreadPool(n, "twitterutil"))
 
   def getScalaFPExecutor(n: Int): Tuple2[ExecutorService, ExecutionContext] = {
-    val executionService = Executors.newFixedThreadPool(n)
+    val executionService = fixedThreadPool(n, "scalafp")
     (executionService, ExecutionContext.fromExecutorService(executionService))
   }
 
   def getPrimExecutor(n: Int): Executor = {
-    val executionService = Executors.newFixedThreadPool(n)
+    val executionService = fixedThreadPool(n, "prim")
     new JavaExecutor(executionService)
   }
 
