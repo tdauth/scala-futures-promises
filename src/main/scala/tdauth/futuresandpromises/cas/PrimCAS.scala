@@ -23,7 +23,7 @@ class PrimCAS[T](ex: Executor) extends AtomicReference[FP[T]#Value](Right(Prim.N
 
   override def getP: T = super[FP].getResultWithMVar
 
-  override def isReady = {
+  override def isReady: Boolean = {
     val s = get
     s match {
       case Left(_) => true

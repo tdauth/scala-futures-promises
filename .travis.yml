@@ -5,7 +5,6 @@ scala:
 script:
    - sbt clean coverage test coverageReport scalastyle doc assembly
    - bash runbecomeraces.sh
-   - bash runbenchmarks.sh
    - bash runcallbackorder.sh
 
 after_success:
