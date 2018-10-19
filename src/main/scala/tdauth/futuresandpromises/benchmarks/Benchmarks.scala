@@ -373,6 +373,7 @@ object Benchmarks extends App {
   }
 
   def perf2TwitterUtil(n: Int, cores: Int): Long = {
+    val counter = new Synchronizer(n)
     var ex: com.twitter.util.ExecutorServiceFuturePool = null
     val difference = benchmarkSuspend { ex = getTwitterUtilExecutor(cores) }
 
@@ -391,6 +392,7 @@ object Benchmarks extends App {
               p2.setValue(1)
               registerOnComplete(rest.tail)
             }
+            counter.increment
           }))
       }
     }
@@ -398,11 +400,12 @@ object Benchmarks extends App {
     registerOnComplete(promises)
 
     promises(0).setValue(1)
-    com.twitter.util.Await.result(promises.last)
+    counter.await
     difference + benchmarkSuspend { ex.executor.shutdownNow }
   }
 
   def perf3TwitterUtil(n: Int, cores: Int): Long = {
+    val counter = new Synchronizer(n)
     var ex: com.twitter.util.ExecutorServiceFuturePool = null
     val difference = benchmarkSuspend { ex = getTwitterUtilExecutor(cores) }
 
@@ -420,6 +423,7 @@ object Benchmarks extends App {
             if (p2 ne null) {
               p2.setValue(1)
             }
+            counter.increment
           })
         })
 
@@ -432,7 +436,7 @@ object Benchmarks extends App {
     registerOnComplete(promises)
 
     promises(0).setValue(1)
-    com.twitter.util.Await.result(promises.last)
+    counter.await
     difference + benchmarkSuspend { ex.executor.shutdownNow }
   }
 
@@ -469,6 +473,7 @@ object Benchmarks extends App {
   }
 
   def perf2ScalaFP(n: Int, cores: Int): Long = {
+    val counter = new Synchronizer(n)
     var ex: Tuple2[ExecutorService, ExecutionContext] = null
     val difference = benchmarkSuspend { ex = getScalaFPExecutor(cores) }
     val executionService = ex._1
@@ -485,6 +490,7 @@ object Benchmarks extends App {
             p2.trySuccess(1)
             registerOnComplete(rest.tail)
           }
+          counter.increment
         })(executionContext)
       }
     }
@@ -492,11 +498,12 @@ object Benchmarks extends App {
     registerOnComplete(promises)
 
     promises(0).trySuccess(1)
-    Await.result(promises.last.future, Duration.Inf)
+    counter.await
     difference + benchmarkSuspend { executionService.shutdownNow }
   }
 
   def perf3ScalaFP(n: Int, cores: Int): Long = {
+    val counter = new Synchronizer(n)
     var ex: Tuple2[ExecutorService, ExecutionContext] = null
     val difference = benchmarkSuspend { ex = getScalaFPExecutor(cores) }
     val executionService = ex._1
@@ -512,6 +519,7 @@ object Benchmarks extends App {
           if (p2 ne null) {
             p2.trySuccess(1)
           }
+          counter.increment
         })(executionContext)
 
         if (p2 ne null) {
@@ -523,7 +531,7 @@ object Benchmarks extends App {
     registerOnComplete(promises)
 
     promises(0).trySuccess(1)
-    Await.result(promises.last.future, Duration.Inf)
+    counter.await
     difference + benchmarkSuspend { executionService.shutdownNow }
   }
 
@@ -549,6 +557,7 @@ object Benchmarks extends App {
   }
 
   def perf2Prim(n: Int, cores: Int, f: (Executor) => FP[Int]): Long = {
+    val counter = new Synchronizer(n)
     var ex: Executor = null
     val difference = benchmarkSuspend { ex = getPrimExecutor(cores) }
     val promises = (1 to n).map(_ => f(ex))
@@ -562,6 +571,7 @@ object Benchmarks extends App {
             p2.trySuccess(1)
             registerOnComplete(rest.tail)
           }
+          counter.increment
         })
       }
     }
@@ -569,11 +579,12 @@ object Benchmarks extends App {
     registerOnComplete(promises)
 
     promises(0).trySuccess(1)
-    promises.last.getP
+    counter.await
     difference + benchmarkSuspend { ex.shutdown }
   }
 
   def perf3Prim(n: Int, cores: Int, f: (Executor) => FP[Int]): Long = {
+    val counter = new Synchronizer(n)
     var ex: Executor = null
     val difference = benchmarkSuspend { ex = getPrimExecutor(cores) }
     val promises = (1 to n).map(_ => f(ex))
@@ -586,6 +597,7 @@ object Benchmarks extends App {
           if (p2 ne null) {
             p2.trySuccess(1)
           }
+          counter.increment
         })
 
         registerOnComplete(rest.tail)
@@ -595,7 +607,7 @@ object Benchmarks extends App {
     registerOnComplete(promises)
 
     promises(0).trySuccess(1)
-    promises.last.getP
+    counter.await
     difference + benchmarkSuspend { ex.shutdown }
   }
 }
