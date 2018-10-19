@@ -7,7 +7,7 @@ import scala.util.Left
 
 import tdauth.futuresandpromises.Executor
 import tdauth.futuresandpromises.FP
-import tdauth.futuresandpromises.Prim
+import tdauth.futuresandpromises.Base
 import tdauth.futuresandpromises.Try
 
 /**
@@ -15,11 +15,11 @@ import tdauth.futuresandpromises.Try
  * Thread-safety by CAS operations.
  * This is similiar to Scala FP's implementation.
  */
-class PrimCAS[T](ex: Executor) extends AtomicReference[FP[T]#Value](Right(Prim.Noop)) with FP[T] {
+class PrimCAS[T](ex: Executor) extends AtomicReference[FP[T]#Value](Right(Base.Noop)) with FP[T] {
 
   override def getExecutor: Executor = ex
 
-  override def newP[S](ex: Executor): Prim[S] = new PrimCAS[S](ex)
+  override def newP[S](ex: Executor): Base[S] = new PrimCAS[S](ex)
 
   override def getP: T = super[FP].getResultWithMVar
 

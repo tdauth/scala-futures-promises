@@ -7,18 +7,18 @@ import tdauth.futuresandpromises.Try
 import scala.concurrent.duration.Duration
 import java.util.concurrent.locks.AbstractQueuedSynchronizer
 import java.util.concurrent.TimeoutException
-import tdauth.futuresandpromises.Prim
+import tdauth.futuresandpromises.Base
 import tdauth.futuresandpromises.FP
-import tdauth.futuresandpromises.Prim
+import tdauth.futuresandpromises.Base
 
 class PrimSTM[T](ex: Executor) extends FP[T] {
 
   // TODO Is there some way to extend this ref value?
-  var result: Ref[Value] = Ref(Right(Prim.Noop))
+  var result: Ref[Value] = Ref(Right(Base.Noop))
 
   override def getExecutor: Executor = ex
 
-  override def newP[S](ex: Executor): Prim[S] = new PrimSTM[S](ex)
+  override def newP[S](ex: Executor): Base[S] = new PrimSTM[S](ex)
 
   override def getP: T = atomic { implicit txn =>
     val s = result()

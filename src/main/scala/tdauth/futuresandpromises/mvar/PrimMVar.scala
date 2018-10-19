@@ -5,11 +5,11 @@ import scala.util.Left
 
 import tdauth.futuresandpromises.Executor
 import tdauth.futuresandpromises.FP
-import tdauth.futuresandpromises.Prim
+import tdauth.futuresandpromises.Base
 import tdauth.futuresandpromises.Try
 
 class PrimMVar[T](ex: Executor) extends SyncVar[FP[T]#Value] with FP[T] {
-  put(Right(Prim.Noop))
+  put(Right(Base.Noop))
 
   /*
    * We need a second MVar to signal that the future has a result.
@@ -18,7 +18,7 @@ class PrimMVar[T](ex: Executor) extends SyncVar[FP[T]#Value] with FP[T] {
 
   override def getExecutor: Executor = ex
 
-  override def newP[S](ex: Executor): Prim[S] = new PrimMVar[S](ex)
+  override def newP[S](ex: Executor): Base[S] = new PrimMVar[S](ex)
 
   override def getP: T = {
     sig.get

@@ -35,7 +35,7 @@ import scala.util.control.NonFatal
  * ```
  * Combines a Prim, a future and a promise to one single trait.
  */
-trait FP[T] extends Prim[T] {
+trait FP[T] extends Base[T] {
   // Basic construction methods:
   def newFP[S](ex : Executor): FP[S] = newP[S](ex).asInstanceOf[FP[S]]
 

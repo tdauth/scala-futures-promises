@@ -19,15 +19,14 @@ private[futuresandpromises] class LinkedCallbackEntry[T]( final val c: (Try[T]) 
  */
 private[futuresandpromises] final class EmptyCallbackEntry extends CallbackEntry
 
-object Prim {
+object Base {
   private[futuresandpromises] final val Noop = new EmptyCallbackEntry
 }
 
 /**
  * Primitive set of (promise/future) features.
- * TODO Directly extend this by the Future and implement future and promise together?
  */
-trait Prim[T] {
+trait Base[T] {
   type Callback = (Try[T]) => Unit
   type LinkedCallbackEntry = tdauth.futuresandpromises.LinkedCallbackEntry[T]
   type Value = Either[Try[T], CallbackEntry]
@@ -39,7 +38,7 @@ trait Prim[T] {
   /**
    * Creates a new primitive with the current executor.
    */
-  def newP[S](ex: Executor): Prim[S]
+  def newP[S](ex: Executor): Base[S]
   /**
    * Blocks until the future has been completed and returns the successful result value or throws the failing exception.
    */
@@ -58,13 +57,12 @@ trait Prim[T] {
     s.take().get()
   }
 
-  protected def appendCallback(callbacks: CallbackEntry, c: Callback): CallbackEntry = if (callbacks ne Prim.Noop) new LinkedCallbackEntry(c, callbacks.asInstanceOf[LinkedCallbackEntry]) else new LinkedCallbackEntry(c)
+  protected def appendCallback(callbacks: CallbackEntry, c: Callback): CallbackEntry = if (callbacks ne Base.Noop) new LinkedCallbackEntry(c, callbacks.asInstanceOf[LinkedCallbackEntry]) else new LinkedCallbackEntry(c)
 
   protected def dispatchCallback(v: Try[T], c: Callback) = getExecutor.submit(() => c.apply(v))
 
-  protected def dispatchCallbacks(v: Try[T], callbacks: CallbackEntry) = if (callbacks ne Prim.Noop) getExecutor.submit(() => applyCallbacks(v, callbacks.asInstanceOf[LinkedCallbackEntry]))
+  protected def dispatchCallbacks(v: Try[T], callbacks: CallbackEntry) = if (callbacks ne Base.Noop) getExecutor.submit(() => applyCallbacks(v, callbacks.asInstanceOf[LinkedCallbackEntry]))
 
-  // TODO Reverse chain before? Scala FP makes no guarantees about the order of callbacks.
   @tailrec protected final def applyCallbacks(v: Try[T], callbackEntry: LinkedCallbackEntry) {
     callbackEntry.c.apply(v)
     if (callbackEntry.prev ne null) applyCallbacks(v, callbackEntry.prev)

@@ -7,6 +7,7 @@ import tdauth.futuresandpromises.Executor
 import tdauth.futuresandpromises.Promise
 import tdauth.futuresandpromises.Util
 import tdauth.futuresandpromises.JavaExecutor
+import com.twitter.util.FuturePool
 
 class UtilTest extends AbstractUtilTest {
   override def getTestName: String = "TwitterUtil"
@@ -14,7 +15,7 @@ class UtilTest extends AbstractUtilTest {
   override def getUtil: Util = new TwitterUtil
   override def getPromise: Promise[Int] = new TwitterPromise[Int](executor)
 
-  private val executor = new JavaExecutor(Executors.newSingleThreadExecutor())
+  private val executor = new TwitterExecutor(FuturePool(Executors.newSingleThreadExecutor()))
 
   "TwitterUtil.async" should "complete a future successfully" in {
     val f = TwitterUtil.async(getExecutor, () => 10)

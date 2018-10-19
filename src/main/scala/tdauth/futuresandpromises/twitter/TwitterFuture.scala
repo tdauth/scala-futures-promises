@@ -7,15 +7,14 @@ import tdauth.futuresandpromises.Factory
 import tdauth.futuresandpromises.Future
 import tdauth.futuresandpromises.Try
 
-// TODO #28 Use the executor
 class TwitterFuture[T](future: com.twitter.util.Future[T], ex: Executor) extends Future[T] {
   override def get: T = Await.result(future)
 
   override def isReady: Boolean = Await.isReady(future)
 
-  override def onComplete(f: (Try[T]) => Unit): Unit = future.respond(t => {
-    val transformedTry = if (t.isReturn) { new Try[T](t.get) } else { new Try[T](t.throwable) }
-    f.apply(transformedTry)
+  override def onComplete(f: (Try[T]) => Unit): Unit = future.transform(t => {
+    val transformedTry = if (t.isReturn) new Try[T](t.get) else new Try[T](t.throwable)
+    ex.asInstanceOf[TwitterExecutor].futurePool(f(transformedTry))
   })
 
   override def getExecutor: Executor = ex
