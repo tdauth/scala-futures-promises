@@ -136,39 +136,6 @@ class CombinatorsTest extends AbstractUnitSpec {
     the[RuntimeException] thrownBy f.get should have message "test 0"
   }
 
-  "orElseWithFirstNSucc" should "complete the final future with first one over the second one" in {
-    val p0 = getPromise
-    val f0 = p0.future
-    val p1 = getPromise
-    val f1 = p1.future()
-    val f = Combinators.orElseWithFirstNSucc(f0, f1)
-    p0.trySuccess(10)
-    p1.trySuccess(11)
-    f.get should be(10)
-  }
-
-  it should "complete the final future with the second one over the first one" in {
-    val p0 = getPromise
-    val f0 = p0.future()
-    p0.tryFailure(new RuntimeException("test"))
-    val p1 = getPromise
-    val f1 = p1.future()
-    p1.trySuccess(11)
-    val f = Combinators.orElseWithFirstNSucc(f0, f1)
-    f.get should be(11)
-  }
-
-  it should "complete the final future with the first one over the second one when both are failing" in {
-    val p0 = getPromise
-    val f0 = p0.future()
-    p0.tryFailure(new RuntimeException("test 0"))
-    val p1 = getPromise
-    val f1 = p1.future()
-    p1.tryFailure(new RuntimeException("test 1"))
-    val f = Combinators.orElseWithFirstNSucc(f0, f1)
-    the[RuntimeException] thrownBy f.get should have message "test 0"
-  }
-
   "firstNWithFirst" should "throw an exception" in {
     val result = Combinators.firstNWithFirst(executor, Vector(), 3)
     the[RuntimeException] thrownBy result.get should have message "Not enough futures"
