@@ -24,5 +24,5 @@ object CallbackOrderPrimCas extends App {
   p.trySuccess(1)
   p.getP
   println("Callback execution order for PrimCAS: " + s.get)
-  ex.shutdown()
+  ex.shutdown
 }

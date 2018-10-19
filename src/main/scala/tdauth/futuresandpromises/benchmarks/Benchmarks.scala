@@ -20,6 +20,10 @@ import tdauth.futuresandpromises.cas.PrimCAS
 import tdauth.futuresandpromises.mvar.PrimMVar
 import tdauth.futuresandpromises.stm.PrimSTM
 
+/**
+ * Renames the threads with a prefix.
+ * This helps to distinguish them when analyzing profiling data.
+ */
 class SimpleThreadFactory(prefix: String) extends ThreadFactory {
   var c = 0
   override def newThread(r: Runnable): Thread = {

@@ -19,7 +19,7 @@ import scala.concurrent.duration.Duration
  * - Scala 2.13.xx: See method `concatCallbacks` in [[https://github.com/scala/scala/blob/2.13.x/src/library/scala/concurrent/impl/Promise.scala]]
  */
 object CallbackOrderScalaFP extends App {
-  val ex = Executors.newSingleThreadExecutor()
+  val ex = Executors.newSingleThreadExecutor
   implicit val ec = ExecutionContext.fromExecutorService(ex)
 
   val p = Promise[Int]
@@ -37,5 +37,5 @@ object CallbackOrderScalaFP extends App {
   p.success(1)
   Await.ready(p.future, Duration.Inf)
   println("Callback execution order for Scala FP: " + s.get)
-  ex.shutdown()
+  ex.shutdown
 }
