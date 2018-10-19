@@ -16,7 +16,7 @@ import tdauth.futuresandpromises.stm.PrimSTM
 class PromiseChainPrimSTM(ex: Executor, arraySize: Int) extends PrimSTM[Unit](ex) {
   val array = new Array[Byte](arraySize)
 
-  override def finalize = {
+  override def finalize: Unit = {
     // Reference the big array, so it is kept until the GC finalizes this instance.
     println("Done! " + array)
   }

@@ -23,7 +23,7 @@ object BecomeRaceTwitter extends App {
   val p1 = Promise[Int]
   val p2 = Promise[Int]
 
-  def callback(msg: String, x: Try[Int]) = {
+  def callback(msg: String, x: Try[Int]): Unit = {
     val v = counter.incrementAndGet()
     println("%s: completes with value %d".format(msg, x.get))
     if (v == 3) s.put()

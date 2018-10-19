@@ -73,6 +73,6 @@ trait Base[T] {
    * TODO #23 But does it allow interrupts? Is it necessary to allow them?
    */
   private final class CompletionSyncVar[T] extends SyncVar[Try[T]] with (Try[T] => Unit) {
-    override def apply(value: Try[T]) = put(value)
+    override def apply(value: Try[T]): Unit = put(value)
   }
 }

@@ -39,9 +39,9 @@ trait Future[T] {
 
   // Derived methods:
 
-  def onSuccess(f: (T => Unit)) = onComplete(t => if (t.hasValue) f.apply(t.get))
+  def onSuccess(f: (T => Unit)): Unit = onComplete(t => if (t.hasValue) f.apply(t.get))
 
-  def onFailure(f: (Throwable => Unit)) = onComplete(t => if (t.hasException) f.apply(t.getException.get))
+  def onFailure(f: (Throwable => Unit)): Unit = onComplete(t => if (t.hasException) f.apply(t.getException.get))
 
   /**
    * `map` in Scala FP.

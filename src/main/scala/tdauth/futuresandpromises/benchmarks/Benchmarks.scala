@@ -108,11 +108,11 @@ object Benchmarks extends App {
     println("Scala FP")
     runTest("scalafp", testNumber, cores, test)
   }
-  def runTest1ScalaFP = runTestForCores("Test 1", cores => runTestScalaFP(1, cores, () => perf1ScalaFP(TEST_1_N, TEST_1_M, TEST_1_K, cores)))
-  def runTest2ScalaFP = runTestForCores("Test 2", cores => runTestScalaFP(2, cores, () => perf1ScalaFP(TEST_2_N, TEST_2_M, TEST_2_K, cores)))
-  def runTest3ScalaFP = runTestForCores("Test 3", cores => runTestScalaFP(3, cores, () => perf2ScalaFP(TEST_3_N, cores)))
-  def runTest4ScalaFP = runTestForCores("Test 4", cores => runTestScalaFP(4, cores, () => perf3ScalaFP(TEST_4_N, cores)))
-  def runAllTestsScalaFP = {
+  def runTest1ScalaFP: Unit = runTestForCores("Test 1", cores => runTestScalaFP(1, cores, () => perf1ScalaFP(TEST_1_N, TEST_1_M, TEST_1_K, cores)))
+  def runTest2ScalaFP: Unit = runTestForCores("Test 2", cores => runTestScalaFP(2, cores, () => perf1ScalaFP(TEST_2_N, TEST_2_M, TEST_2_K, cores)))
+  def runTest3ScalaFP: Unit = runTestForCores("Test 3", cores => runTestScalaFP(3, cores, () => perf2ScalaFP(TEST_3_N, cores)))
+  def runTest4ScalaFP: Unit = runTestForCores("Test 4", cores => runTestScalaFP(4, cores, () => perf3ScalaFP(TEST_4_N, cores)))
+  def runAllTestsScalaFP {
     runTest1ScalaFP
     runTest2ScalaFP
     runTest3ScalaFP
@@ -127,7 +127,7 @@ object Benchmarks extends App {
   def runTest2PrimCas = runTestForCores("Test 2", cores => runTestPrimCAS(2, cores, () => perf1Prim(TEST_2_N, TEST_2_M, TEST_2_K, cores, ex => new PrimCAS(ex))))
   def runTest3PrimCas = runTestForCores("Test 3", cores => runTestPrimCAS(3, cores, () => perf2Prim(TEST_3_N, cores, ex => new PrimCAS(ex))))
   def runTest4PrimCas = runTestForCores("Test 4", cores => runTestPrimCAS(4, cores, () => perf3Prim(TEST_4_N, cores, ex => new PrimCAS(ex))))
-  def runAllTestsPrimCas = {
+  def runAllTestsPrimCas {
     runTest1PrimCas
     runTest2PrimCas
     runTest3PrimCas
@@ -138,11 +138,11 @@ object Benchmarks extends App {
     println("Prim MVar")
     runTest("mvar", testNumber, cores, test)
   }
-  def runTest1PrimMVar = runTestForCores("Test 1", cores => runTestPrimMVar(1, cores, () => perf1Prim(TEST_1_N, TEST_1_M, TEST_1_K, cores, ex => new PrimMVar(ex))))
-  def runTest2PrimMVar = runTestForCores("Test 2", cores => runTestPrimMVar(2, cores, () => perf1Prim(TEST_2_N, TEST_2_M, TEST_2_K, cores, ex => new PrimMVar(ex))))
-  def runTest3PrimMVar = runTestForCores("Test 3", cores => runTestPrimMVar(3, cores, () => perf2Prim(TEST_3_N, cores, ex => new PrimMVar(ex))))
-  def runTest4PrimMVar = runTestForCores("Test 4", cores => runTestPrimMVar(4, cores, () => perf3Prim(TEST_4_N, cores, ex => new PrimMVar(ex))))
-  def runAllTestsPrimMVar = {
+  def runTest1PrimMVar: Unit = runTestForCores("Test 1", cores => runTestPrimMVar(1, cores, () => perf1Prim(TEST_1_N, TEST_1_M, TEST_1_K, cores, ex => new PrimMVar(ex))))
+  def runTest2PrimMVar: Unit = runTestForCores("Test 2", cores => runTestPrimMVar(2, cores, () => perf1Prim(TEST_2_N, TEST_2_M, TEST_2_K, cores, ex => new PrimMVar(ex))))
+  def runTest3PrimMVar: Unit = runTestForCores("Test 3", cores => runTestPrimMVar(3, cores, () => perf2Prim(TEST_3_N, cores, ex => new PrimMVar(ex))))
+  def runTest4PrimMVar: Unit = runTestForCores("Test 4", cores => runTestPrimMVar(4, cores, () => perf3Prim(TEST_4_N, cores, ex => new PrimMVar(ex))))
+  def runAllTestsPrimMVar {
     runTest1PrimMVar
     runTest2PrimMVar
     runTest3PrimMVar
@@ -153,11 +153,11 @@ object Benchmarks extends App {
     println("Prim STM")
     runTest("stm", testNumber, cores, test)
   }
-  def runTest1PrimStm = runTestForCores("Test 1", cores => runTestPrimStm(1, cores, () => perf1Prim(TEST_1_N, TEST_1_M, TEST_1_K, cores, ex => new PrimSTM(ex))))
-  def runTest2PrimStm = runTestForCores("Test 2", cores => runTestPrimStm(2, cores, () => perf1Prim(TEST_2_N, TEST_2_M, TEST_2_K, cores, ex => new PrimSTM(ex))))
-  def runTest3PrimStm = runTestForCores("Test 3", cores => runTestPrimStm(3, cores, () => perf2Prim(TEST_3_N, cores, ex => new PrimSTM(ex))))
-  def runTest4PrimStm = runTestForCores("Test 4", cores => runTestPrimStm(4, cores, () => perf3Prim(TEST_4_N, cores, ex => new PrimSTM(ex))))
-  def runAllTestsPrimStm = {
+  def runTest1PrimStm: Unit = runTestForCores("Test 1", cores => runTestPrimStm(1, cores, () => perf1Prim(TEST_1_N, TEST_1_M, TEST_1_K, cores, ex => new PrimSTM(ex))))
+  def runTest2PrimStm: Unit = runTestForCores("Test 2", cores => runTestPrimStm(2, cores, () => perf1Prim(TEST_2_N, TEST_2_M, TEST_2_K, cores, ex => new PrimSTM(ex))))
+  def runTest3PrimStm: Unit = runTestForCores("Test 3", cores => runTestPrimStm(3, cores, () => perf2Prim(TEST_3_N, cores, ex => new PrimSTM(ex))))
+  def runTest4PrimStm: Unit = runTestForCores("Test 4", cores => runTestPrimStm(4, cores, () => perf3Prim(TEST_4_N, cores, ex => new PrimSTM(ex))))
+  def runAllTestsPrimStm {
     runTest1PrimStm
     runTest2PrimStm
     runTest3PrimStm
@@ -168,18 +168,18 @@ object Benchmarks extends App {
     println("Twitter Util")
     runTest("twitterutil", testNumber, cores, test)
   }
-  def runTest1TwitterUtil = runTestForCores("Test 1", cores => runTestTwitterUtil(1, cores, () => perf1TwitterUtil(TEST_1_N, TEST_1_M, TEST_1_K, cores)))
-  def runTest2TwitterUtil = runTestForCores("Test 2", cores => runTestTwitterUtil(2, cores, () => perf1TwitterUtil(TEST_2_N, TEST_2_M, TEST_2_K, cores)))
-  def runTest3TwitterUtil = runTestForCores("Test 3", cores => runTestTwitterUtil(3, cores, () => perf2TwitterUtil(TEST_3_N, cores)))
-  def runTest4TwitterUtil = runTestForCores("Test 4", cores => runTestTwitterUtil(4, cores, () => perf3TwitterUtil(TEST_4_N, cores)))
-  def runAllTestsTwitterUtil = {
+  def runTest1TwitterUtil: Unit = runTestForCores("Test 1", cores => runTestTwitterUtil(1, cores, () => perf1TwitterUtil(TEST_1_N, TEST_1_M, TEST_1_K, cores)))
+  def runTest2TwitterUtil: Unit = runTestForCores("Test 2", cores => runTestTwitterUtil(2, cores, () => perf1TwitterUtil(TEST_2_N, TEST_2_M, TEST_2_K, cores)))
+  def runTest3TwitterUtil: Unit = runTestForCores("Test 3", cores => runTestTwitterUtil(3, cores, () => perf2TwitterUtil(TEST_3_N, cores)))
+  def runTest4TwitterUtil: Unit = runTestForCores("Test 4", cores => runTestTwitterUtil(4, cores, () => perf3TwitterUtil(TEST_4_N, cores)))
+  def runAllTestsTwitterUtil {
     runTest1TwitterUtil
     runTest2TwitterUtil
     runTest3TwitterUtil
     runTest4TwitterUtil
   }
 
-  def getPlotFileName(testNumber: Int, plotFileSuffix: String) = "test" + testNumber + "_scala_" + plotFileSuffix + ".dat"
+  def getPlotFileName(testNumber: Int, plotFileSuffix: String): String = "test" + testNumber + "_scala_" + plotFileSuffix + ".dat"
 
   def deletePlotFiles() {
     val files = for {
