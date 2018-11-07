@@ -2,20 +2,17 @@ package tdauth.futuresandpromises.cas
 
 import java.util.concurrent.atomic.AtomicReference
 
+import tdauth.futuresandpromises._
+
 import scala.annotation.tailrec
 import scala.util.Left
 
-import tdauth.futuresandpromises.Executor
-import tdauth.futuresandpromises.FP
-import tdauth.futuresandpromises.Base
-import tdauth.futuresandpromises.Try
-
 /**
- * Stores either a result of a future when the future has been completed or the list of callbacks.
- * Thread-safety by CAS operations.
- * This is similiar to Scala FP's implementation.
- */
-class PrimCAS[T](ex: Executor) extends AtomicReference[FP[T]#Value](Right(Base.Noop)) with FP[T] {
+  * Stores either a result of a future when the future has been completed or the list of callbacks.
+  * Thread-safety by CAS operations.
+  * This is similiar to Scala FP's implementation.
+  */
+class PrimCAS[T](ex: Executor) extends AtomicReference[FP[T]#Value](Right(CallbackEntry.Noop)) with FP[T] {
 
   override def getExecutor: Executor = ex
 
@@ -26,31 +23,36 @@ class PrimCAS[T](ex: Executor) extends AtomicReference[FP[T]#Value](Right(Base.N
   override def isReady: Boolean = {
     val s = get
     s match {
-      case Left(_) => true
+      case Left(_)  => true
       case Right(_) => false
     }
   }
 
-  @tailrec override final def tryComplete(v: Try[T]): Boolean = {
+  override def tryComplete(v: Try[T]): Boolean = tryCompleteInternal(v)
+
+  override def onComplete(c: Callback): Unit = onCompleteInternal(c)
+
+  @tailrec private def tryCompleteInternal(v: Try[T]): Boolean = {
     val s = get
     s match {
-      case Left(x) => false
+      case Left(_) => false
       case Right(x) => {
         if (compareAndSet(s, Left(v))) {
           dispatchCallbacks(v, x)
           true
         } else {
-          tryComplete(v)
+          tryCompleteInternal(v)
         }
       }
     }
   }
 
-  @tailrec override final def onComplete(c: Callback): Unit = {
+  @tailrec private def onCompleteInternal(c: Callback): Unit = {
     val s = get
     s match {
-      case Left(x) => dispatchCallback(x, c)
-      case Right(x) => if (!compareAndSet(s, Right(appendCallback(x, c)))) onComplete(c)
+      case Left(x)  => dispatchCallback(x, c)
+      case Right(x) => if (!compareAndSet(s, Right(appendCallback(x, c)))) onCompleteInternal(c)
     }
   }
+
 }

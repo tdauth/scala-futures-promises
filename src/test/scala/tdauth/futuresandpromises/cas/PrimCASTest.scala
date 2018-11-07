@@ -7,7 +7,7 @@ import tdauth.futuresandpromises.JavaExecutor
 import tdauth.futuresandpromises.FP
 
 class PrimCASTest extends AbstractFPTest {
-  override def getTestName: String = "CasFutureTest"
+  override def getTestName: String = "PrimCASTest"
   override def getFP: FP[Int] = new PrimCAS[Int](executor)
 
   private val executor = new JavaExecutor(Executors.newSingleThreadExecutor())

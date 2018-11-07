@@ -1,15 +1,12 @@
 package tdauth.futuresandpromises.mvar
 
+import tdauth.futuresandpromises._
+
 import scala.concurrent.SyncVar
 import scala.util.Left
 
-import tdauth.futuresandpromises.Executor
-import tdauth.futuresandpromises.FP
-import tdauth.futuresandpromises.Base
-import tdauth.futuresandpromises.Try
-
 class PrimMVar[T](ex: Executor) extends SyncVar[FP[T]#Value] with FP[T] {
-  put(Right(Base.Noop))
+  put(Right(CallbackEntry.Noop))
 
   /*
    * We need a second MVar to signal that the future has a result.
@@ -26,8 +23,8 @@ class PrimMVar[T](ex: Executor) extends SyncVar[FP[T]#Value] with FP[T] {
   }
 
   /**
-   * In Haskell we could call isEmptyMVar.
-   */
+    * In Haskell we could call isEmptyMVar.
+    */
   override def isReady: Boolean = sig.isSet
 
   override def tryComplete(v: Try[T]): Boolean = {

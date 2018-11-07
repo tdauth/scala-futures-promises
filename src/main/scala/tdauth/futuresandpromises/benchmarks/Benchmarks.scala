@@ -1,78 +1,24 @@
 package tdauth.futuresandpromises.benchmarks
 
-import java.io.File
-import java.io.FileWriter
+import java.io.{File, FileWriter}
 import java.util.Locale
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
-import java.util.concurrent.ThreadFactory
 import java.util.concurrent.locks.ReentrantLock
+import java.util.concurrent.{ExecutorService, Executors, ThreadFactory}
 
-import scala.concurrent.Await
-import scala.concurrent.ExecutionContext
-import scala.concurrent.duration.Duration
-import scala.util.Success
-
-import tdauth.futuresandpromises.Executor
-import tdauth.futuresandpromises.FP
-import tdauth.futuresandpromises.JavaExecutor
-import tdauth.futuresandpromises.cas.PrimCAS
+import tdauth.futuresandpromises.cas.{PrimCAS, PrimCASOneCallbackAtATime, PrimCASPromiseLinking}
 import tdauth.futuresandpromises.mvar.PrimMVar
 import tdauth.futuresandpromises.stm.PrimSTM
+import tdauth.futuresandpromises.{Executor, FP, JavaExecutor}
+
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, ExecutionContext}
+import scala.util.Success
 
 /**
- * Renames the threads with a prefix.
- * This helps to distinguish them when analyzing profiling data.
- */
-class SimpleThreadFactory(prefix: String) extends ThreadFactory {
-  var c = 0
-  override def newThread(r: Runnable): Thread = {
-    val t = new Thread(r, "%s - %d".format(prefix, c))
-    c += 1
-    t
-  }
-}
-
-/**
- * Waits until the counter has reached max.
- */
-class Synchronizer(max: Int) {
-  var lock = new ReentrantLock()
-  var condition = lock.newCondition()
-  var counter = 0
-
-  def increment {
-    lock.lock()
-    try {
-      counter = counter + 1
-      condition.signal
-    } finally {
-      lock.unlock();
-    }
-  }
-
-  def await {
-    var notFull = true
-    do {
-      lock.lock()
-      try {
-        notFull = counter < max
-        if (notFull) condition.await
-      } finally {
-        lock.unlock();
-      }
-    } while (notFull)
-  }
-}
-
-/**
- * Compares the performance of our FP implementation to the performance of Scala FP and Twitter Util.
- *
- * TODO What about:
- * - https://github.com/scalaz/scalaz/blob/series/7.3.x/concurrent/src/main/scala/scalaz/concurrent/MVar.scala
- * - https://github.com/scalaz/scalaz/blob/series/7.3.x/concurrent/src/main/scala/scalaz/concurrent/Future.scala
- * - https://github.com/scalaz/scalaz/blob/series/7.3.x/concurrent/src/main/scala/scalaz/concurrent/Chan.scala
- */
+  * Compares the performance of our FP implementation to the performance of Scala FP and Twitter Util.
+  * We have five different performance tests but test 1 and test 2 use the same method [[Benchmarks#perf1]].
+  * Therefore, we only have four different `perf<n>` methods.
+  */
 object Benchmarks extends App {
   val ITERATIONS = 10
   val CORES = Vector(1, 2, 4, 8) // +1 for the main thread!
@@ -89,20 +35,39 @@ object Benchmarks extends App {
   val TEST_3_N = 2000000
   // test 4
   val TEST_4_N = 2000000
+  // test 5
+  // TODO #32 Increase the number when promise linking has compression.
+  val TEST_5_N = 5000
 
   deletePlotFiles
 
   printf("We have %d available processors.\n", Runtime.getRuntime().availableProcessors())
   runAllTests
 
-  // compare all perf3
-  //runTest3ScalaFP
-  //runTest3PrimCas
-  //runTest1PrimCas
-  //runTest1PrimMVar
-  //runTest1PrimStm
-  //runTest1ScalaFP
-  //runTest1TwitterUtil
+  /*
+  runTest5TwitterUtil
+  runTest5ScalaFP
+  runTest5PrimCas
+  runTest5PrimCasOneCallbackAtATime
+  runTest5PrimCasPromiseLinking
+   */
+
+  def runTestTwitterUtil(testNumber: Int, cores: Int, test: () => Long) {
+    println("Twitter Util")
+    runTest("twitterutil", testNumber, cores, test)
+  }
+  def runTest1TwitterUtil: Unit = runTestForCores("Test 1", cores => runTestTwitterUtil(1, cores, () => perf1TwitterUtil(TEST_1_N, TEST_1_M, TEST_1_K, cores)))
+  def runTest2TwitterUtil: Unit = runTestForCores("Test 2", cores => runTestTwitterUtil(2, cores, () => perf1TwitterUtil(TEST_2_N, TEST_2_M, TEST_2_K, cores)))
+  def runTest3TwitterUtil: Unit = runTestForCores("Test 3", cores => runTestTwitterUtil(3, cores, () => perf2TwitterUtil(TEST_3_N, cores)))
+  def runTest4TwitterUtil: Unit = runTestForCores("Test 4", cores => runTestTwitterUtil(4, cores, () => perf3TwitterUtil(TEST_4_N, cores)))
+  def runTest5TwitterUtil: Unit = runTestForCores("Test 5", cores => runTestTwitterUtil(5, cores, () => perf4TwitterUtil(TEST_5_N, cores)))
+  def runAllTestsTwitterUtil {
+    runTest1TwitterUtil
+    runTest2TwitterUtil
+    runTest3TwitterUtil
+    runTest4TwitterUtil
+    runTest5TwitterUtil
+  }
 
   def runTestScalaFP(testNumber: Int, cores: Int, test: () => Long) {
     println("Scala FP")
@@ -112,34 +77,92 @@ object Benchmarks extends App {
   def runTest2ScalaFP: Unit = runTestForCores("Test 2", cores => runTestScalaFP(2, cores, () => perf1ScalaFP(TEST_2_N, TEST_2_M, TEST_2_K, cores)))
   def runTest3ScalaFP: Unit = runTestForCores("Test 3", cores => runTestScalaFP(3, cores, () => perf2ScalaFP(TEST_3_N, cores)))
   def runTest4ScalaFP: Unit = runTestForCores("Test 4", cores => runTestScalaFP(4, cores, () => perf3ScalaFP(TEST_4_N, cores)))
+  def runTest5ScalaFP: Unit = runTestForCores("Test 5", cores => runTestScalaFP(5, cores, () => perf3ScalaFP(TEST_5_N, cores)))
   def runAllTestsScalaFP {
     runTest1ScalaFP
     runTest2ScalaFP
     runTest3ScalaFP
     runTest4ScalaFP
+    runTest5ScalaFP
   }
 
   def runTestPrimCAS(testNumber: Int, cores: Int, test: () => Long) {
     println("Prim CAS")
     runTest("cas", testNumber, cores, test)
   }
-  def runTest1PrimCas = runTestForCores("Test 1", cores => runTestPrimCAS(1, cores, () => perf1Prim(TEST_1_N, TEST_1_M, TEST_1_K, cores, ex => new PrimCAS(ex))))
-  def runTest2PrimCas = runTestForCores("Test 2", cores => runTestPrimCAS(2, cores, () => perf1Prim(TEST_2_N, TEST_2_M, TEST_2_K, cores, ex => new PrimCAS(ex))))
+  def runTest1PrimCas =
+    runTestForCores("Test 1", cores => runTestPrimCAS(1, cores, () => perf1Prim(TEST_1_N, TEST_1_M, TEST_1_K, cores, ex => new PrimCAS(ex))))
+  def runTest2PrimCas =
+    runTestForCores("Test 2", cores => runTestPrimCAS(2, cores, () => perf1Prim(TEST_2_N, TEST_2_M, TEST_2_K, cores, ex => new PrimCAS(ex))))
   def runTest3PrimCas = runTestForCores("Test 3", cores => runTestPrimCAS(3, cores, () => perf2Prim(TEST_3_N, cores, ex => new PrimCAS(ex))))
   def runTest4PrimCas = runTestForCores("Test 4", cores => runTestPrimCAS(4, cores, () => perf3Prim(TEST_4_N, cores, ex => new PrimCAS(ex))))
+  def runTest5PrimCas = runTestForCores("Test 5", cores => runTestPrimCAS(5, cores, () => perf4Prim(TEST_5_N, cores, ex => new PrimCAS(ex))))
   def runAllTestsPrimCas {
     runTest1PrimCas
     runTest2PrimCas
     runTest3PrimCas
     runTest4PrimCas
+    runTest5PrimCas
+  }
+
+  def runTestPrimCASOneCallbackAtATime(testNumber: Int, cores: Int, test: () => Long) {
+    println("Prim CAS One Callback At A Time")
+    runTest("cas_one_callback_at_a_time", testNumber, cores, test)
+  }
+  def runTest1PrimCasOneCallbackAtATime =
+    runTestForCores(
+      "Test 1",
+      cores => runTestPrimCASOneCallbackAtATime(1, cores, () => perf1Prim(TEST_1_N, TEST_1_M, TEST_1_K, cores, ex => new PrimCASOneCallbackAtATime(ex))))
+  def runTest2PrimCasOneCallbackAtATime =
+    runTestForCores(
+      "Test 2",
+      cores => runTestPrimCASOneCallbackAtATime(2, cores, () => perf1Prim(TEST_2_N, TEST_2_M, TEST_2_K, cores, ex => new PrimCASOneCallbackAtATime(ex))))
+  def runTest3PrimCasOneCallbackAtATime =
+    runTestForCores("Test 3", cores => runTestPrimCASOneCallbackAtATime(3, cores, () => perf2Prim(TEST_3_N, cores, ex => new PrimCASOneCallbackAtATime(ex))))
+  def runTest4PrimCasOneCallbackAtATime =
+    runTestForCores("Test 4", cores => runTestPrimCASOneCallbackAtATime(4, cores, () => perf3Prim(TEST_4_N, cores, ex => new PrimCASOneCallbackAtATime(ex))))
+  def runTest5PrimCasOneCallbackAtATime =
+    runTestForCores("Test 5", cores => runTestPrimCASOneCallbackAtATime(5, cores, () => perf4Prim(TEST_5_N, cores, ex => new PrimCASOneCallbackAtATime(ex))))
+  def runAllTestsPrimCasOneCallbackAtATime {
+    runTest1PrimCasOneCallbackAtATime
+    runTest2PrimCasOneCallbackAtATime
+    runTest3PrimCasOneCallbackAtATime
+    runTest4PrimCasOneCallbackAtATime
+    runTest5PrimCasOneCallbackAtATime
+  }
+
+  def runTestPrimCASPromiseLinking(testNumber: Int, cores: Int, test: () => Long) {
+    println("Prim CAS Promise Linking")
+    runTest("cas_promise_linking", testNumber, cores, test)
+  }
+  def runTest1PrimCasPromiseLinking =
+    runTestForCores("Test 1",
+                    cores => runTestPrimCASPromiseLinking(1, cores, () => perf1Prim(TEST_1_N, TEST_1_M, TEST_1_K, cores, ex => new PrimCASPromiseLinking(ex))))
+  def runTest2PrimCasPromiseLinking =
+    runTestForCores("Test 2",
+                    cores => runTestPrimCASPromiseLinking(2, cores, () => perf1Prim(TEST_2_N, TEST_2_M, TEST_2_K, cores, ex => new PrimCASPromiseLinking(ex))))
+  def runTest3PrimCasPromiseLinking =
+    runTestForCores("Test 3", cores => runTestPrimCASPromiseLinking(3, cores, () => perf2Prim(TEST_3_N, cores, ex => new PrimCASPromiseLinking(ex))))
+  def runTest4PrimCasPromiseLinking =
+    runTestForCores("Test 4", cores => runTestPrimCASPromiseLinking(4, cores, () => perf3Prim(TEST_4_N, cores, ex => new PrimCASPromiseLinking(ex))))
+  def runTest5PrimCasPromiseLinking =
+    runTestForCores("Test 5", cores => runTestPrimCASPromiseLinking(5, cores, () => perf4Prim(TEST_5_N, cores, ex => new PrimCASPromiseLinking(ex))))
+  def runAllTestsPrimCasPromiseLinking {
+    runTest1PrimCasPromiseLinking
+    runTest2PrimCasPromiseLinking
+    runTest3PrimCasPromiseLinking
+    runTest4PrimCasPromiseLinking
+    runTest5PrimCasPromiseLinking
   }
 
   def runTestPrimMVar(testNumber: Int, cores: Int, test: () => Long) {
     println("Prim MVar")
     runTest("mvar", testNumber, cores, test)
   }
-  def runTest1PrimMVar: Unit = runTestForCores("Test 1", cores => runTestPrimMVar(1, cores, () => perf1Prim(TEST_1_N, TEST_1_M, TEST_1_K, cores, ex => new PrimMVar(ex))))
-  def runTest2PrimMVar: Unit = runTestForCores("Test 2", cores => runTestPrimMVar(2, cores, () => perf1Prim(TEST_2_N, TEST_2_M, TEST_2_K, cores, ex => new PrimMVar(ex))))
+  def runTest1PrimMVar: Unit =
+    runTestForCores("Test 1", cores => runTestPrimMVar(1, cores, () => perf1Prim(TEST_1_N, TEST_1_M, TEST_1_K, cores, ex => new PrimMVar(ex))))
+  def runTest2PrimMVar: Unit =
+    runTestForCores("Test 2", cores => runTestPrimMVar(2, cores, () => perf1Prim(TEST_2_N, TEST_2_M, TEST_2_K, cores, ex => new PrimMVar(ex))))
   def runTest3PrimMVar: Unit = runTestForCores("Test 3", cores => runTestPrimMVar(3, cores, () => perf2Prim(TEST_3_N, cores, ex => new PrimMVar(ex))))
   def runTest4PrimMVar: Unit = runTestForCores("Test 4", cores => runTestPrimMVar(4, cores, () => perf3Prim(TEST_4_N, cores, ex => new PrimMVar(ex))))
   def runAllTestsPrimMVar {
@@ -153,8 +176,10 @@ object Benchmarks extends App {
     println("Prim STM")
     runTest("stm", testNumber, cores, test)
   }
-  def runTest1PrimStm: Unit = runTestForCores("Test 1", cores => runTestPrimStm(1, cores, () => perf1Prim(TEST_1_N, TEST_1_M, TEST_1_K, cores, ex => new PrimSTM(ex))))
-  def runTest2PrimStm: Unit = runTestForCores("Test 2", cores => runTestPrimStm(2, cores, () => perf1Prim(TEST_2_N, TEST_2_M, TEST_2_K, cores, ex => new PrimSTM(ex))))
+  def runTest1PrimStm: Unit =
+    runTestForCores("Test 1", cores => runTestPrimStm(1, cores, () => perf1Prim(TEST_1_N, TEST_1_M, TEST_1_K, cores, ex => new PrimSTM(ex))))
+  def runTest2PrimStm: Unit =
+    runTestForCores("Test 2", cores => runTestPrimStm(2, cores, () => perf1Prim(TEST_2_N, TEST_2_M, TEST_2_K, cores, ex => new PrimSTM(ex))))
   def runTest3PrimStm: Unit = runTestForCores("Test 3", cores => runTestPrimStm(3, cores, () => perf2Prim(TEST_3_N, cores, ex => new PrimSTM(ex))))
   def runTest4PrimStm: Unit = runTestForCores("Test 4", cores => runTestPrimStm(4, cores, () => perf3Prim(TEST_4_N, cores, ex => new PrimSTM(ex))))
   def runAllTestsPrimStm {
@@ -162,21 +187,6 @@ object Benchmarks extends App {
     runTest2PrimStm
     runTest3PrimStm
     runTest4PrimStm
-  }
-
-  def runTestTwitterUtil(testNumber: Int, cores: Int, test: () => Long) {
-    println("Twitter Util")
-    runTest("twitterutil", testNumber, cores, test)
-  }
-  def runTest1TwitterUtil: Unit = runTestForCores("Test 1", cores => runTestTwitterUtil(1, cores, () => perf1TwitterUtil(TEST_1_N, TEST_1_M, TEST_1_K, cores)))
-  def runTest2TwitterUtil: Unit = runTestForCores("Test 2", cores => runTestTwitterUtil(2, cores, () => perf1TwitterUtil(TEST_2_N, TEST_2_M, TEST_2_K, cores)))
-  def runTest3TwitterUtil: Unit = runTestForCores("Test 3", cores => runTestTwitterUtil(3, cores, () => perf2TwitterUtil(TEST_3_N, cores)))
-  def runTest4TwitterUtil: Unit = runTestForCores("Test 4", cores => runTestTwitterUtil(4, cores, () => perf3TwitterUtil(TEST_4_N, cores)))
-  def runAllTestsTwitterUtil {
-    runTest1TwitterUtil
-    runTest2TwitterUtil
-    runTest3TwitterUtil
-    runTest4TwitterUtil
   }
 
   def getPlotFileName(testNumber: Int, plotFileSuffix: String): String = "test" + testNumber + "_scala_" + plotFileSuffix + ".dat"
@@ -198,9 +208,9 @@ object Benchmarks extends App {
   }
 
   /**
-   * Measures the execution time of t and returns it in ns.
-   * The returned value can be substracted from the total execution time to ignore it.
-   */
+    * Measures the execution time of t and returns it in ns.
+    * The returned value can be substracted from the total execution time to ignore it.
+    */
   def benchmarkSuspend(t: => Unit): Long = {
     val start = System.nanoTime()
     t
@@ -209,8 +219,8 @@ object Benchmarks extends App {
   }
 
   /**
-   * @param t The test function which returns time which has to be substracted from the exectuion time since it should not be measured.
-   */
+    * @param t The test function which returns time which has to be substracted from the exectuion time since it should not be measured.
+    */
   def execTest(t: () => Long): Double = {
     System.gc
     val start = System.nanoTime()
@@ -257,7 +267,8 @@ object Benchmarks extends App {
       () => perf1ScalaFP(n, m, k, cores),
       () => perf1Prim(n, m, k, cores, ex => new PrimCAS(ex)),
       () => perf1Prim(n, m, k, cores, ex => new PrimMVar(ex)),
-      () => perf1Prim(n, m, k, cores, ex => new PrimSTM(ex)))
+      () => perf1Prim(n, m, k, cores, ex => new PrimSTM(ex))
+    )
   }
 
   def test2(cores: Int) {
@@ -271,7 +282,8 @@ object Benchmarks extends App {
       () => perf1ScalaFP(n, m, k, cores),
       () => perf1Prim(n, m, k, cores, ex => new PrimCAS(ex)),
       () => perf1Prim(n, m, k, cores, ex => new PrimMVar(ex)),
-      () => perf1Prim(n, m, k, cores, ex => new PrimSTM(ex)))
+      () => perf1Prim(n, m, k, cores, ex => new PrimSTM(ex))
+    )
   }
 
   def test3(cores: Int) {
@@ -283,7 +295,8 @@ object Benchmarks extends App {
       () => perf2ScalaFP(n, cores),
       () => perf2Prim(n, cores, ex => new PrimCAS(ex)),
       () => perf2Prim(n, cores, ex => new PrimMVar(ex)),
-      () => perf2Prim(n, cores, ex => new PrimSTM(ex)))
+      () => perf2Prim(n, cores, ex => new PrimSTM(ex))
+    )
   }
 
   def test4(cores: Int) {
@@ -295,7 +308,21 @@ object Benchmarks extends App {
       () => perf3ScalaFP(n, cores),
       () => perf3Prim(n, cores, ex => new PrimCAS(ex)),
       () => perf3Prim(n, cores, ex => new PrimMVar(ex)),
-      () => perf3Prim(n, cores, ex => new PrimSTM(ex)))
+      () => perf3Prim(n, cores, ex => new PrimSTM(ex))
+    )
+  }
+
+  def test5(cores: Int) {
+    val n = TEST_5_N
+    runAll(
+      5,
+      cores,
+      () => perf4TwitterUtil(n, cores),
+      () => perf4ScalaFP(n, cores),
+      () => perf4Prim(n, cores, ex => new PrimCAS(ex)),
+      () => perf4Prim(n, cores, ex => new PrimMVar(ex)),
+      () => perf4Prim(n, cores, ex => new PrimSTM(ex))
+    )
   }
 
   def runTestForCores(name: String, t: (Int) => Unit) {
@@ -317,12 +344,59 @@ object Benchmarks extends App {
   def runTest2 = runTestForCores("Test 2", test2)
   def runTest3 = runTestForCores("Test 3", test3)
   def runTest4 = runTestForCores("Test 4", test4)
+  def runTest5 = runTestForCores("Test 5", test5)
 
   def runAllTests {
     runTest1
     runTest2
     runTest3
     runTest4
+    runTest5
+  }
+
+  /**
+    * Renames the threads with a prefix.
+    * This helps to distinguish them when analyzing profiling data.
+    */
+  class SimpleThreadFactory(prefix: String) extends ThreadFactory {
+    var c = 0
+    override def newThread(r: Runnable): Thread = {
+      val t = new Thread(r, "%s - %d".format(prefix, c))
+      c += 1
+      t
+    }
+  }
+
+  /**
+    * Waits until the counter has reached max.
+    */
+  class Synchronizer(max: Int) {
+    var lock = new ReentrantLock()
+    var condition = lock.newCondition()
+    var counter = 0
+
+    def increment {
+      lock.lock()
+      try {
+        counter = counter + 1
+        condition.signal
+      } finally {
+        lock.unlock();
+      }
+    }
+
+    def await {
+      var notFull = true
+      do {
+        lock.lock()
+        try {
+          notFull = counter < max
+          if (notFull) condition.await
+        } finally {
+          lock.unlock();
+        }
+      } while (notFull)
+    }
   }
 
   def threadFactory(prefix: String): ThreadFactory = new SimpleThreadFactory(prefix)
@@ -444,6 +518,26 @@ object Benchmarks extends App {
     difference + benchmarkSuspend { ex.executor.shutdownNow }
   }
 
+  def perf4TwitterUtil(n: Int, cores: Int): Long = {
+    var ex: com.twitter.util.ExecutorServiceFuturePool = null
+    val difference = benchmarkSuspend { ex = getTwitterUtilExecutor(cores) }
+
+    def linkPromises(i: Int): com.twitter.util.Future[Int] = {
+      val successfulP = com.twitter.util.Promise[Int]
+      successfulP.setValue(10)
+      successfulP.transform(_ =>
+        if (i == 0) {
+          val successfulP = com.twitter.util.Promise[Int]
+          successfulP.setValue(10)
+          successfulP
+        } else { linkPromises(i - 1) })
+    }
+
+    val p = linkPromises(n)
+    com.twitter.util.Await.ready(p)
+    difference + benchmarkSuspend { ex.executor.shutdownNow }
+  }
+
   def perf1ScalaFP(n: Int, m: Int, k: Int, cores: Int): Long = {
     val counter = new Synchronizer(n * (m + k))
     var ex: Tuple2[ExecutorService, ExecutionContext] = null
@@ -539,6 +633,28 @@ object Benchmarks extends App {
     difference + benchmarkSuspend { executionService.shutdownNow }
   }
 
+  def perf4ScalaFP(n: Int, cores: Int): Long = {
+    var ex: Tuple2[ExecutorService, ExecutionContext] = null
+    val difference = benchmarkSuspend { ex = getScalaFPExecutor(cores) }
+    val executionService = ex._1
+    val executionContext = ex._2
+
+    def linkPromises(i: Int): scala.concurrent.Future[Int] = {
+      val successfulP = scala.concurrent.Promise[Int]
+      successfulP.trySuccess(10)
+      successfulP.future.transformWith(_ =>
+        if (i == 0) {
+          val successfulP = scala.concurrent.Promise[Int]
+          successfulP.trySuccess(10)
+          successfulP.future
+        } else { linkPromises(i - 1) })(executionContext)
+    }
+
+    val p = linkPromises(n)
+    Await.ready(p, Duration.Inf)
+    difference + benchmarkSuspend { executionService.shutdownNow }
+  }
+
   def perf1Prim(n: Int, m: Int, k: Int, cores: Int, f: (Executor) => FP[Int]): Long = {
     val counter = new Synchronizer(n * (m + k))
     var ex: Executor = null
@@ -547,10 +663,11 @@ object Benchmarks extends App {
 
     promises.foreach(p => {
       1 to m foreach (_ => ex.submit(() => p.onComplete(t => counter.increment)))
-      1 to k foreach (_ => ex.submit(() => {
-        p.trySuccess(1)
-        counter.increment
-      }))
+      1 to k foreach (_ =>
+        ex.submit(() => {
+          p.trySuccess(1)
+          counter.increment
+        }))
     })
 
     // get ps
@@ -598,9 +715,7 @@ object Benchmarks extends App {
       val p2 = if (rest.size > 1) rest(1) else null
       if (p1 ne null) {
         p1.onComplete(t => {
-          if (p2 ne null) {
-            p2.trySuccess(1)
-          }
+          if (p2 ne null) p2.trySuccess(1)
           counter.increment
         })
 
@@ -612,6 +727,38 @@ object Benchmarks extends App {
 
     promises(0).trySuccess(1)
     counter.await
+    difference + benchmarkSuspend { ex.shutdown }
+  }
+
+  /**
+    * Creates a chain of promises by linking them with [[FP#transformWith]] which uses [[FP#tryCompleteWith]].
+    * The second promise is completed with the first one, the third with the second one etc.
+    * The transformation uses an already completed promise, so the transformation takes place as soon as the final promise
+    * of the chain is completed.
+    *
+    * We cannot use [[FP#tryCompleteWith]] directly since neither Scala FP nor Twitter Util implement promise linking for this method
+    * but for `transformWith` for Scala FP and `transform` for Twitter Util.
+    *
+    * This benchmark is similiar to [[https://github.com/scala/scala/blob/2.12.x/test/files/run/t7336.scala t7336]] but without creating an array in the closure or trying to
+    * exceed the memory.
+    */
+  def perf4Prim(n: Int, cores: Int, f: (Executor) => FP[Int]): Long = {
+    var ex: Executor = null
+    val difference = benchmarkSuspend { ex = getPrimExecutor(cores) }
+
+    def linkPromises(i: Int): FP[Int] = {
+      val successfulP = f(ex)
+      successfulP.trySuccess(10)
+      successfulP.transformWith(_ =>
+        if (i == 0) {
+          val successfulP = f(ex)
+          successfulP.trySuccess(10)
+          successfulP
+        } else { linkPromises(i - 1) })
+    }
+
+    val p = linkPromises(n)
+    p.getP
     difference + benchmarkSuspend { ex.shutdown }
   }
 }

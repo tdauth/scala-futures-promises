@@ -7,7 +7,7 @@ import tdauth.futuresandpromises.JavaExecutor
 import tdauth.futuresandpromises.FP
 
 class PrimMVarTest extends AbstractFPTest {
-  override def getTestName: String = "MVarFutureTest"
+  override def getTestName: String = "PrimMVarTest"
   override def getFP: FP[Int] = new PrimMVar[Int](executor)
 
   private val executor = new JavaExecutor(Executors.newSingleThreadExecutor())

@@ -1,20 +1,13 @@
 package tdauth.futuresandpromises.stm
 
-import scala.concurrent.stm._
+import tdauth.futuresandpromises._
 
-import tdauth.futuresandpromises.Executor
-import tdauth.futuresandpromises.Try
-import scala.concurrent.duration.Duration
-import java.util.concurrent.locks.AbstractQueuedSynchronizer
-import java.util.concurrent.TimeoutException
-import tdauth.futuresandpromises.Base
-import tdauth.futuresandpromises.FP
-import tdauth.futuresandpromises.Base
+import scala.concurrent.stm._
 
 class PrimSTM[T](ex: Executor) extends FP[T] {
 
   // TODO Is there some way to extend this ref value?
-  var result: Ref[Value] = Ref(Right(Base.Noop))
+  var result: Ref[Value] = Ref(Right(CallbackEntry.Noop))
 
   override def getExecutor: Executor = ex
 
@@ -23,7 +16,7 @@ class PrimSTM[T](ex: Executor) extends FP[T] {
   override def getP: T = atomic { implicit txn =>
     val s = result()
     s match {
-      case Left(x) => x.get
+      case Left(x)  => x.get
       case Right(x) => retry
     }
   }
@@ -32,7 +25,7 @@ class PrimSTM[T](ex: Executor) extends FP[T] {
     atomic { implicit txn =>
       val s = result()
       s match {
-        case Left(_) => true
+        case Left(_)  => true
         case Right(_) => false
       }
     }
@@ -56,7 +49,7 @@ class PrimSTM[T](ex: Executor) extends FP[T] {
     atomic { implicit txn =>
       val s = result()
       s match {
-        case Left(x) => dispatchCallback(x, c)
+        case Left(x)  => dispatchCallback(x, c)
         case Right(x) => result() = Right(appendCallback(x, c))
       }
     }
