@@ -22,11 +22,3 @@ libraryDependencies += "org.scala-lang.modules" %% "scala-async" % "0.9.6"
 libraryDependencies += "org.scalactic" %% "scalactic" % "3.0.5"
 
 libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.5" % "test"
-
-libraryDependencies += "com.storm-enroute" %% "scalameter" % "0.8.2" % "test"
-
-testFrameworks += new TestFramework("org.scalameter.ScalaMeterFramework")
-
-parallelExecution in Test := false
-
-logBuffered in Test := false

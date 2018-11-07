@@ -81,8 +81,7 @@ It uses the plugin [sbt-scoverage](https://github.com/scoverage/sbt-scoverage).
 The command `sbt clean coverage test coverageReport` generates coverage reports into the directory `target/scala-<scala-version>/scoverage-report`.
 
 ## Benchmarks
-[scalameter](https://scalameter.github.io/) is a Scala library which allows you to write benchmarks in Scala.
-At the moment, we do only provide benchmarks of our primitive implementations in [benchmarks](./src/main/scala/tdauth/futuresandpromises/benchmarks/Benchmarks.scala).
+We do only provide benchmarks of our primitive implementations in [benchmarks](./src/main/scala/tdauth/futuresandpromises/benchmarks/Benchmarks.scala).
 
 ## Profiling
 For profiling you can use [VisualVM](https://visualvm.github.io/).
@@ -102,3 +101,9 @@ It will be generated into the directory `target/scala-<scala-version>/api/`.
 
 ## Eclipse Support
 Use the commnad `sbt eclipse` to generate an Eclipse project.
+
+## Static Code Analysis
+The code can be analysed with the command `sbt scalastyle`.
+
+## Formatting
+Automatic code formatting can be done with the command `sbt scalafmt`.

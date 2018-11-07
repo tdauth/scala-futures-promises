@@ -3,7 +3,7 @@ scala:
    - 2.12.6
 
 script:
-   - sbt clean coverage test coverageReport scalastyle doc assembly
+   - sbt clean coverage test coverageReport scalastyle scalafmt doc assembly
    - bash runbecomeraces.sh
    - bash runcallbackorder.sh
 
