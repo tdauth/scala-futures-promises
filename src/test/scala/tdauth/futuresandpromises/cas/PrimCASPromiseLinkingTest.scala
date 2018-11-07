@@ -58,11 +58,16 @@ class PrimCASPromiseLinkingTest extends AbstractFPTest {
 
     def assertChain(i: Int, p: FPLinkingType): Unit = {
       p.isLink shouldEqual true
+      p.isReady shouldEqual true
       p.getP shouldEqual 10
       if (i > 0) assertChain(i - 1, p.getLinkTo)
     }
 
     assertChain(n, successfulP)
+
+    p.isLink() shouldEqual false
+    p.isReady shouldEqual true
+    p.getP shouldEqual 10
   }
 
   def getFPPromiseLinking: PrimCASPromiseLinking[Int] = new PrimCASPromiseLinking[Int](executor)
