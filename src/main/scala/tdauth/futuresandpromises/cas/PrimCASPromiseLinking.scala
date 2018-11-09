@@ -23,6 +23,11 @@ case class ValueTypeLink[T](l: PrimCASPromiseLinking[T]) extends ValueType[T]
   * ```
   *
   * Therefore, every `tryCompleteWith` call has to compress the chain and make the link directly link to f0 which is the root promise.
+  *
+  * This implementation is more similiar to Scala FP 2.12.x than to 2.13.x.
+  * See [[https://github.com/scala/scala/blob/2.12.x/src/library/scala/concurrent/impl/Promise.scala DefaultPromise.scala]].
+  * Scala FP 2.12.x's implementation has been influenced by Twitter Util's implementation.
+  * See [[https://github.com/twitter/util/blob/master/util-core/src/main/scala/com/twitter/util/Promise.scala Twitter promise implementation]].
   */
 class PrimCASPromiseLinking[T](ex: Executor) extends AtomicReference[ValueType[T]](ValueTypeCallbackEntry[T](CallbackEntry.Noop)) with FP[T] {
 
