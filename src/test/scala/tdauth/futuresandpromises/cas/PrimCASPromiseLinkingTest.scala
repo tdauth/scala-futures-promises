@@ -18,8 +18,20 @@ class PrimCASPromiseLinkingTest extends AbstractFPTest {
   "Link" should "link to another promise and be completed by it" in {
     val v = new AtomicBoolean(false)
     val p0 = getFPPromiseLinking
+
+    p0.isLink() shouldEqual false
+    p0.isLinkTo(p0) shouldEqual false
+    p0.isListOfCallbacks() shouldEqual true
+    p0.getNumberOfCallbacks() shouldEqual 0
+
     val p1 = getFPPromiseLinking
     p1.onComplete(_ => v.set(true))
+
+    p1.isLink() shouldEqual false
+    p1.isLinkTo(p0) shouldEqual false
+    p1.isListOfCallbacks() shouldEqual true
+    p1.getNumberOfCallbacks() shouldEqual 1
+
     p0.tryCompleteWith(p1)
 
     p0.isListOfCallbacks() shouldEqual true
