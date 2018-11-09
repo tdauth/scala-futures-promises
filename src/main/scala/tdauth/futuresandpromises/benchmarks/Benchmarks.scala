@@ -37,7 +37,7 @@ object Benchmarks extends App {
   val TEST_4_N = 2000000
   // test 5
   // TODO #32 Increase the number when promise linking has compression.
-  val TEST_5_N = 5000
+  val TEST_5_N = 20000000
 
   deletePlotFiles
 
@@ -50,7 +50,7 @@ object Benchmarks extends App {
   runTest5PrimCas
   runTest5PrimCasOneCallbackAtATime
   runTest5PrimCasPromiseLinking
-   */
+  */
 
   def runTestTwitterUtil(testNumber: Int, cores: Int, test: () => Long) {
     println("Twitter Util")
@@ -525,12 +525,14 @@ object Benchmarks extends App {
     def linkPromises(i: Int): com.twitter.util.Future[Int] = {
       val successfulP = com.twitter.util.Promise[Int]
       successfulP.setValue(10)
+
+      // TODO #32 Use the executor ex here to call the callback. Make sure that the number of completed tasks is correct for the executor.
       successfulP.transform(_ =>
         if (i == 0) {
           val successfulP = com.twitter.util.Promise[Int]
           successfulP.setValue(10)
           successfulP
-        } else { linkPromises(i - 1) })
+        } else linkPromises(i - 1))
     }
 
     val p = linkPromises(n)
@@ -647,7 +649,7 @@ object Benchmarks extends App {
           val successfulP = scala.concurrent.Promise[Int]
           successfulP.trySuccess(10)
           successfulP.future
-        } else { linkPromises(i - 1) })(executionContext)
+        } else linkPromises(i - 1))(executionContext)
     }
 
     val p = linkPromises(n)
@@ -741,6 +743,7 @@ object Benchmarks extends App {
     *
     * This benchmark is similiar to [[https://github.com/scala/scala/blob/2.12.x/test/files/run/t7336.scala t7336]] but without creating an array in the closure or trying to
     * exceed the memory.
+    * Note that the exhausting memory was due to a bug in the Scala compiler.
     */
   def perf4Prim(n: Int, cores: Int, f: (Executor) => FP[Int]): Long = {
     var ex: Executor = null
@@ -754,7 +757,7 @@ object Benchmarks extends App {
           val successfulP = f(ex)
           successfulP.trySuccess(10)
           successfulP
-        } else { linkPromises(i - 1) })
+        } else linkPromises(i - 1))
     }
 
     val p = linkPromises(n)

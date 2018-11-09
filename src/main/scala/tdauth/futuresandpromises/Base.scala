@@ -9,19 +9,6 @@ trait Base[T] {
 
   type Callback = (Try[T]) => Unit
 
-  /**
-    * Single backwards linked list of callbacks.
-    * When appending a callback, it will only be reversed link and the current link will be replaced by the new element.
-    * This should improve the performance on appending elements compared to storing the whole list.
-    * This does also mean that when the callbacks are called, they will be called in reverse order.
-    */
-  private[futuresandpromises] case class LinkedCallbackEntry(final val c: Callback, final val prev: CallbackEntry) extends CallbackEntry
-
-  /**
-    * If there is no link to previous callback entry yet, only the callback has to be stored.
-    */
-  private[futuresandpromises] case class SingleCallbackEntry(final val c: Callback) extends CallbackEntry
-
   type Value = Either[Try[T], CallbackEntry]
 
   /**
@@ -68,13 +55,14 @@ trait Base[T] {
     if (callbacks ne CallbackEntry.Noop) getExecutor.submit(() => applyCallbacks(v, callbacks))
 
   // TODO #32 @tailrec
+  // TODO #32 How to do pattern matching with keeping the generic types T?
   protected final def applyCallbacks(v: Try[T], callbackEntry: CallbackEntry) {
     callbackEntry match {
-      case LinkedCallbackEntry(c, prev) => {
-        c.apply(v)
+      case LinkedCallbackEntry(_, prev) => {
+        callbackEntry.asInstanceOf[LinkedCallbackEntry[T]].c.apply(v)
         applyCallbacks(v, prev)
       }
-      case SingleCallbackEntry(c) => c.apply(v)
+      case SingleCallbackEntry(_) => callbackEntry.asInstanceOf[SingleCallbackEntry[T]].c.apply(v)
       case ParentCallbackEntry(left, right) => {
         applyCallbacks(v, left) // TODO #32 Make one list from them which does still allow tail call optimization. Scala 2.13.xx has a FIXME here, too but for their type ManyCallbacks.
         applyCallbacks(v, right)
@@ -84,13 +72,14 @@ trait Base[T] {
   }
 
   // TODO #32 @tailrec
+  // TODO #32 How to do pattern matching with keeping the generic types T?
   protected final def dispatchCallbacksOneAtATime(v: Try[T], callbacks: CallbackEntry): Unit = if (callbacks ne CallbackEntry.Noop) {
     callbacks match {
-      case LinkedCallbackEntry(c, prev) => {
-        getExecutor.submit(() => c.apply(v))
+      case LinkedCallbackEntry(_, prev) => {
+        getExecutor.submit(() => callbacks.asInstanceOf[LinkedCallbackEntry[T]].c.apply(v))
         dispatchCallbacksOneAtATime(v, prev)
       }
-      case SingleCallbackEntry(c) => getExecutor.submit(() => c.apply(v))
+      case SingleCallbackEntry(_) => getExecutor.submit(() => callbacks.asInstanceOf[SingleCallbackEntry[T]].c.apply(v))
       case ParentCallbackEntry(left, right) => {
         dispatchCallbacksOneAtATime(v, left) // TODO #32 Make one list from them which does still allow tail call optimization. Scala 2.13.xx has a FIXME here, too but for their type ManyCallbacks.
         dispatchCallbacksOneAtATime(v, right)

@@ -54,5 +54,4 @@ class PrimCAS[T](ex: Executor) extends AtomicReference[FP[T]#Value](Right(Callba
       case Right(x) => if (!compareAndSet(s, Right(appendCallback(x, c)))) onCompleteInternal(c)
     }
   }
-
 }
