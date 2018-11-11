@@ -44,13 +44,11 @@ object Benchmarks extends App {
   printf("We have %d available processors.\n", Runtime.getRuntime().availableProcessors())
   runAllTests
 
-  /*
-  runTest5TwitterUtil
-  runTest5ScalaFP
-  runTest5PrimCas
-  runTest5PrimCasOneCallbackAtATime
-  runTest5PrimCasPromiseLinking
-  */
+  //runTest5TwitterUtil
+  //runTest5ScalaFP
+  //runTest5PrimCas
+  //runTest5PrimCasOneCallbackAtATime
+  //runTest5PrimCasPromiseLinking
 
   def runTestTwitterUtil(testNumber: Int, cores: Int, test: () => Long) {
     println("Twitter Util")
@@ -218,10 +216,12 @@ object Benchmarks extends App {
     (fin - start)
   }
 
+  type TestFunction = () => Long
+
   /**
     * @param t The test function which returns time which has to be substracted from the exectuion time since it should not be measured.
     */
-  def execTest(t: () => Long): Double = {
+  def execTest(t: TestFunction): Double = {
     System.gc
     val start = System.nanoTime()
     val difference = t()
@@ -232,7 +232,7 @@ object Benchmarks extends App {
     seconds
   }
 
-  def runTest(plotFileSuffix: String, testNumber: Int, cores: Int, t: () => Long) {
+  def runTest(plotFileSuffix: String, testNumber: Int, cores: Int, t: TestFunction) {
     val rs = for (i <- (1 to ITERATIONS)) yield execTest(t)
     val xs = rs.sorted
     val low = xs.head
@@ -243,7 +243,15 @@ object Benchmarks extends App {
     writeEntryIntoPlotFile(getPlotFileName(testNumber, plotFileSuffix), cores, av)
   }
 
-  def runAll(testNumber: Int, cores: Int, t0: () => Long, t1: () => Long, t2: () => Long, t3: () => Long, t4: () => Long): Unit = {
+  def runAll(testNumber: Int,
+             cores: Int,
+             t0: TestFunction,
+             t1: TestFunction,
+             t2: TestFunction,
+             t3: TestFunction,
+             t4: TestFunction,
+             t5: TestFunction,
+             t6: TestFunction): Unit = {
     println("Twitter Util")
     runTest("twitterutil", testNumber, cores, t0)
     println("Scala FP")
@@ -254,6 +262,10 @@ object Benchmarks extends App {
     runTest("mvar", testNumber, cores, t3)
     println("Prim STM")
     runTest("stm", testNumber, cores, t4)
+    println("Prim CAS One Callback At A Time")
+    runTest("cas_one_callback_at_a_time", testNumber, cores, t5)
+    println("Prim CAS Promise Linking")
+    runTest("cas_promise_linking", testNumber, cores, t6)
   }
 
   def test1(cores: Int) {
@@ -267,7 +279,9 @@ object Benchmarks extends App {
       () => perf1ScalaFP(n, m, k, cores),
       () => perf1Prim(n, m, k, cores, ex => new PrimCAS(ex)),
       () => perf1Prim(n, m, k, cores, ex => new PrimMVar(ex)),
-      () => perf1Prim(n, m, k, cores, ex => new PrimSTM(ex))
+      () => perf1Prim(n, m, k, cores, ex => new PrimSTM(ex)),
+      () => perf1Prim(n, m, k, cores, ex => new PrimCASOneCallbackAtATime(ex)),
+      () => perf1Prim(n, m, k, cores, ex => new PrimCASPromiseLinking(ex))
     )
   }
 
@@ -282,7 +296,9 @@ object Benchmarks extends App {
       () => perf1ScalaFP(n, m, k, cores),
       () => perf1Prim(n, m, k, cores, ex => new PrimCAS(ex)),
       () => perf1Prim(n, m, k, cores, ex => new PrimMVar(ex)),
-      () => perf1Prim(n, m, k, cores, ex => new PrimSTM(ex))
+      () => perf1Prim(n, m, k, cores, ex => new PrimSTM(ex)),
+      () => perf1Prim(n, m, k, cores, ex => new PrimCASOneCallbackAtATime(ex)),
+      () => perf1Prim(n, m, k, cores, ex => new PrimCASPromiseLinking(ex))
     )
   }
 
@@ -295,7 +311,9 @@ object Benchmarks extends App {
       () => perf2ScalaFP(n, cores),
       () => perf2Prim(n, cores, ex => new PrimCAS(ex)),
       () => perf2Prim(n, cores, ex => new PrimMVar(ex)),
-      () => perf2Prim(n, cores, ex => new PrimSTM(ex))
+      () => perf2Prim(n, cores, ex => new PrimSTM(ex)),
+      () => perf2Prim(n, cores, ex => new PrimCASOneCallbackAtATime(ex)),
+      () => perf2Prim(n, cores, ex => new PrimCASPromiseLinking(ex))
     )
   }
 
@@ -308,7 +326,9 @@ object Benchmarks extends App {
       () => perf3ScalaFP(n, cores),
       () => perf3Prim(n, cores, ex => new PrimCAS(ex)),
       () => perf3Prim(n, cores, ex => new PrimMVar(ex)),
-      () => perf3Prim(n, cores, ex => new PrimSTM(ex))
+      () => perf3Prim(n, cores, ex => new PrimSTM(ex)),
+      () => perf3Prim(n, cores, ex => new PrimCASOneCallbackAtATime(ex)),
+      () => perf3Prim(n, cores, ex => new PrimCASPromiseLinking(ex))
     )
   }
 
@@ -319,9 +339,15 @@ object Benchmarks extends App {
       cores,
       () => perf4TwitterUtil(n, cores),
       () => perf4ScalaFP(n, cores),
+      /*
+       * TODO #32 Out of memory exception: "java.lang.OutOfMemoryError: GC overhead limit exceeded". Does this mean that the GC is always busy?
+       * https://stackoverflow.com/questions/1393486/error-java-lang-outofmemoryerror-gc-overhead-limit-exceeded
+       */
       () => perf4Prim(n, cores, ex => new PrimCAS(ex)),
       () => perf4Prim(n, cores, ex => new PrimMVar(ex)),
-      () => perf4Prim(n, cores, ex => new PrimSTM(ex))
+      () => perf4Prim(n, cores, ex => new PrimSTM(ex)),
+      () => perf4Prim(n, cores, ex => new PrimCASOneCallbackAtATime(ex)),
+      () => perf4Prim(n, cores, ex => new PrimCASPromiseLinking(ex))
     )
   }
 

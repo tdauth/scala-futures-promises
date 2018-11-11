@@ -92,9 +92,6 @@ Then run the Bash script [profilevisualvm.sh](./profilevisualvm.sh) which is an 
 You have to change the path to your VisualVM location.
 Note that VisualVM instruments the code for profiling and slows it down massively.
 
-An alternative to VisualVM is [jvmtop](https://github.com/patric-r/jvmtop).
-Run the Bash script [profilejvmtop.sh](./profilejvmtop.sh).
-
 ## API Documentation
 The API documentation can be generated with [scaladoc](https://docs.scala-lang.org/style/scaladoc.html) with the following command: `sbt doc`
 It will be generated into the directory `target/scala-<scala-version>/api/`.

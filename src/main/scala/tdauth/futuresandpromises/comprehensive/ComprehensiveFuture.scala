@@ -390,7 +390,7 @@ object ComprehensiveFuture {
   /**
    * This has to be a method here since it requires a factory, too.
    */
-  final def unit(f: Factory, ex: Executor): Future[Unit] = fromTry(f, ex, new Try[Unit])
+  final def unit(f: Factory, ex: Executor): Future[Unit] = fromTry(f, ex, new Try[Unit]())
 
   // TODO #15 Implement never
 }

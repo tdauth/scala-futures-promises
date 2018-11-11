@@ -6,6 +6,8 @@ organization := "tdauth"
 
 scalaVersion := "2.12.7"
 
+scalacOptions := Seq("-unchecked", "-deprecation", "-feature")
+
 // set the main class for 'sbt run'
 mainClass in (Compile, run) := Some("tdauth.futuresandpromises.benchmarks.Benchmarks")
 // set the main class for packaging the main jar

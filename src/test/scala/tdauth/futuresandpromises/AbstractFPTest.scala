@@ -132,7 +132,7 @@ abstract class AbstractFPTest extends AbstractUnitSpec {
     1 to 10 foreach (i => p.onComplete(_ => {
       val v = s.take()
       s.put(v :+ i)
-      if (i == 1) l.put()
+      if (i == 1) l.put(())
     }))
     p.trySuccess(10) should be(true)
     l.get
@@ -153,7 +153,7 @@ abstract class AbstractFPTest extends AbstractUnitSpec {
     1 to 10 foreach (i => p.onComplete(_ => {
       val v = s.take()
       s.put(v :+ i)
-      if (i == 10) l.put()
+      if (i == 10) l.put(())
     }))
     l.get
     val finalResult = s.get
