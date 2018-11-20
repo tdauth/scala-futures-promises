@@ -1,19 +1,20 @@
-package tdauth.futuresandpromises.stm
+package tdauth.futuresandpromises.core.stm
 
 import tdauth.futuresandpromises._
+import tdauth.futuresandpromises.core.{Noop, Core, FP}
 
 import scala.concurrent.stm._
 
-class PrimSTM[T](ex: Executor) extends FP[T] {
+class CSTM[T](ex: Executor) extends FP[T] {
 
   // TODO Is there some way to extend this ref value?
-  var result: Ref[Value] = Ref(Right(CallbackEntry.Noop))
+  var result: Ref[Value] = Ref(Right(Noop))
 
-  override def getExecutor: Executor = ex
+  override def getExecutorC: Executor = ex
 
-  override def newP[S](ex: Executor): Base[S] = new PrimSTM[S](ex)
+  override def newC[S](ex: Executor): Core[S] = new CSTM[S](ex)
 
-  override def getP: T = atomic { implicit txn =>
+  override def getC: T = atomic { implicit txn =>
     val s = result()
     s match {
       case Left(x)  => x.get
@@ -21,7 +22,7 @@ class PrimSTM[T](ex: Executor) extends FP[T] {
     }
   }
 
-  override def isReady: Boolean = {
+  override def isReadyC: Boolean = {
     atomic { implicit txn =>
       val s = result()
       s match {
@@ -31,7 +32,7 @@ class PrimSTM[T](ex: Executor) extends FP[T] {
     }
   }
 
-  override def tryComplete(v: Try[T]): Boolean = {
+  override def tryCompleteC(v: Try[T]): Boolean = {
     atomic { implicit txn =>
       val s = result()
       s match {
@@ -45,7 +46,7 @@ class PrimSTM[T](ex: Executor) extends FP[T] {
     }
   }
 
-  override def onComplete(c: Callback): Unit = {
+  override def onCompleteC(c: Callback): Unit = {
     atomic { implicit txn =>
       val s = result()
       s match {

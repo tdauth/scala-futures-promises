@@ -1,5 +1,7 @@
 package tdauth.futuresandpromises
 
+import tdauth.futuresandpromises.core.FP
+
 import scala.concurrent.SyncVar
 import scala.collection.immutable.List
 
@@ -108,18 +110,6 @@ abstract class AbstractFPTest extends AbstractUnitSpec {
   }
 
   // Derived future methods:
-  "future" should "complete a promise successfully" in {
-    val p = getFP
-    val f = p.future[String](() => "Hello world!")
-    f.getP should be("Hello world!")
-  }
-
-  it should "fail a future" in {
-    val p = getFP
-    val f = p.future[String](() => throw new RuntimeException("Failure!"))
-    the[RuntimeException] thrownBy f.getP should have message "Failure!"
-  }
-
   /**
    * Scala FP makes no guarantees about the execution order of callbacks.
    * We can guarantee that they are executed in reverse order.

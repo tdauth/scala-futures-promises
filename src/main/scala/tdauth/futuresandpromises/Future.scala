@@ -46,12 +46,12 @@ trait Future[T] {
   /**
    * `map` in Scala FP.
    */
-  def followedBy[S](f: (T => S)): Future[S] = this.then(t => f.apply(t.get))
+  def followedBy[S](f: (T => S)): Future[S] = this.transform(t => f.apply(t.get))
 
   /**
    * `flatMap` in Scala FP
    */
-  def followedByWith[S](f: (T => Future[S])): Future[S] = thenWith(t => {
+  def followedByWith[S](f: (T => Future[S])): Future[S] = transformWith(t => {
     try {
       f.apply(t.get())
     } catch {
@@ -73,7 +73,7 @@ trait Future[T] {
    * @param f Callback function which is executed by the same executor as this future and which gets the result of this future and of which the return value or thrown exception completes the newly created future.
    * @return Returns a newly created future which is completed by the callback function at some point in time.
    */
-  def then[S](f: (Try[T]) => S): Future[S] = {
+  def transform[S](f: (Try[T]) => S): Future[S] = {
     val p = factory.createPromise[S](getExecutor)
     this.onComplete(t => {
       try {
@@ -88,7 +88,7 @@ trait Future[T] {
   /**
    * This method is called transformWith in Scala FP.
    */
-  def thenWith[S](f: (Try[T]) => Future[S]): Future[S] = {
+  def transformWith[S](f: (Try[T]) => Future[S]): Future[S] = {
     val p = factory.createPromise[S](getExecutor)
     this.onComplete(t => {
       p.tryCompleteWith(f.apply(t))
@@ -107,7 +107,7 @@ trait Future[T] {
    * @param f The registered callback predicate.
    * @return Returns the filtered future.
    */
-  def guard(f: (T) => Boolean): Future[T] = this.then[T]((t: Try[T]) => {
+  def guard(f: (T) => Boolean): Future[T] = this.transform[T]((t: Try[T]) => {
     val v: T = t.get() // rethrows the exception if necessary
 
     if (!f.apply(v)) {
@@ -125,12 +125,12 @@ trait Future[T] {
    * @param other Another future which is chosen if this future fails.
    * @return Returns the selection between both futures.
    */
-  def orElse(other: Future[T]): Future[T] = this.thenWith(
+  def orElse(other: Future[T]): Future[T] = this.transformWith(
     t => {
       if (t.hasValue) {
         this
       } else {
-        other.then(tt =>
+        other.transform(tt =>
           if (tt.hasValue) {
             tt.get()
           } else {

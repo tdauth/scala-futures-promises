@@ -2,11 +2,9 @@ package tdauth.futuresandpromises.a_memory
 
 import java.util.concurrent.Executors
 
-import scala.concurrent.ExecutionContext
+import tdauth.futuresandpromises.standardlibrary.{ScalaFPExecutor, ScalaFPFuture, ScalaFPPromise}
 
-import tdauth.futuresandpromises.standardlibrary.ScalaFPExecutor
-import tdauth.futuresandpromises.standardlibrary.ScalaFPFuture
-import tdauth.futuresandpromises.standardlibrary.ScalaFPPromise
+import scala.concurrent.ExecutionContext
 
 class ScalaFPRecursiveMemoryTest extends AbstractRecursiveMemoryTest[ScalaFPFuture[Int]] {
   val executor = new ScalaFPExecutor(ExecutionContext.fromExecutorService(Executors.newSingleThreadExecutor()))

@@ -1,17 +1,19 @@
-package tdauth.futuresandpromises.cas
+package tdauth.futuresandpromises.core.cas
+
 import java.util.concurrent.atomic.AtomicReference
 
 import tdauth.futuresandpromises._
+import tdauth.futuresandpromises.core._
 
 import scala.annotation.tailrec
 
 sealed trait ValueType[T]
 case class ValueTypeTry[T](t: Try[T]) extends ValueType[T]
 case class ValueTypeCallbackEntry[T](c: CallbackEntry) extends ValueType[T]
-case class ValueTypeLink[T](l: PrimCASPromiseLinking[T]) extends ValueType[T]
+case class ValueTypeLink[T](l: CCASPromiseLinking[T]) extends ValueType[T]
 
 /**
-  * Similar to [[PrimCAS]] but implements [[FP#tryCompleteWith]] with the help of promise linking optimization (implemented in Twitter Util and Scala FP).
+  * Similar to [[CCAS]] but implements [[FP#tryCompleteWith]] with the help of promise linking optimization (implemented in Twitter Util and Scala FP).
   * Whenever two promises are equal, all callbacks are moved to one of them.
   *
   * Here is an example:
@@ -29,17 +31,17 @@ case class ValueTypeLink[T](l: PrimCASPromiseLinking[T]) extends ValueType[T]
   * Scala FP 2.12.x's implementation has been influenced by Twitter Util's implementation.
   * See [[https://github.com/twitter/util/blob/master/util-core/src/main/scala/com/twitter/util/Promise.scala Twitter promise implementation]].
   */
-class PrimCASPromiseLinking[T](ex: Executor) extends AtomicReference[ValueType[T]](ValueTypeCallbackEntry[T](CallbackEntry.Noop)) with FP[T] {
+class CCASPromiseLinking[T](ex: Executor) extends AtomicReference[ValueType[T]](ValueTypeCallbackEntry[T](Noop)) with FP[T] {
 
-  type Self = PrimCASPromiseLinking[T]
+  type Self = CCASPromiseLinking[T]
 
-  override def getExecutor: Executor = ex
+  override def getExecutorC: Executor = ex
 
-  override def newP[S](ex: Executor): Base[S] = new PrimCASPromiseLinking[S](ex)
+  override def newC[S](ex: Executor): Core[S] = new CCASPromiseLinking[S](ex)
 
-  override def getP: T = super[FP].getResultWithMVar
+  override def getC: T = super[FP].getResultWithMVar
 
-  override def isReady: Boolean = {
+  override def isReadyC: Boolean = {
     val s = get
     s match {
       case ValueTypeTry(_)           => true
@@ -48,9 +50,9 @@ class PrimCASPromiseLinking[T](ex: Executor) extends AtomicReference[ValueType[T
     }
   }
 
-  override def tryComplete(v: Try[T]): Boolean = tryCompleteInternal(v)
+  override def tryCompleteC(v: Try[T]): Boolean = tryCompleteInternal(v)
 
-  override def onComplete(c: Callback): Unit = onCompleteInternal(c)
+  override def onCompleteC(c: Callback): Unit = onCompleteInternal(c)
 
   override def tryCompleteWith(other: FP[T]): Unit = tryCompleteWithInternal(other)
 
@@ -137,7 +139,7 @@ class PrimCASPromiseLinking[T](ex: Executor) extends AtomicReference[ValueType[T
     * @param primCASPromiseLinking The target promise which this should be a direct link to.
     * @return True if this is a direct link to the target promise. Otherwise, false.
     */
-  private[cas] def isLinkTo(primCASPromiseLinking: PrimCASPromiseLinking[T]): Boolean = {
+  private[cas] def isLinkTo(primCASPromiseLinking: CCASPromiseLinking[T]): Boolean = {
     val s = get
     s match {
       case ValueTypeTry(_)           => false
@@ -155,7 +157,7 @@ class PrimCASPromiseLinking[T](ex: Executor) extends AtomicReference[ValueType[T
     }
   }
 
-  private[cas] def getLinkTo(): PrimCASPromiseLinking[T] = {
+  private[cas] def getLinkTo(): CCASPromiseLinking[T] = {
     val s = get
     s match {
       case ValueTypeTry(_)           => throw new RuntimeException("Invalid usage.")
@@ -185,7 +187,7 @@ class PrimCASPromiseLinking[T](ex: Executor) extends AtomicReference[ValueType[T
   private def getNumberOfCallbacks(c: CallbackEntry): Int = c match {
     case SingleCallbackEntry(_)           => 1
     case ParentCallbackEntry(left, right) => getNumberOfCallbacks(left) + getNumberOfCallbacks(right)
-    case EmptyCallbackEntry()             => 0
+    case Noop                             => 0
     case LinkedCallbackEntry(_, prev)     => 1 + getNumberOfCallbacks(prev)
   }
 }

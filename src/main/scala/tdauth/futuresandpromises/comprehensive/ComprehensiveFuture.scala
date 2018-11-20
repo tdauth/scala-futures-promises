@@ -26,7 +26,7 @@ trait ComprehensiveFuture[T] extends Future[T] with Awaitable[T] {
    * Implemented similary to Scala FP's implementation.
    */
   def andThen[U](pf: PartialFunction[Try[T], U]): Future[T] = {
-    this.then[T]((t: Try[T]) => {
+    this.transform[T]((t: Try[T]) => {
       try {
         pf.applyOrElse[Try[T], Any](t, Predef.identity(_))
       } catch { case t if NonFatal(t) => }
@@ -59,27 +59,8 @@ trait ComprehensiveFuture[T] extends Future[T] with Awaitable[T] {
    */
   def value: Option[Try[T]]
 
-  /**
-   * Basically {@link #then} but returns Scala's Try instead of the successful result value or a thrown exception.
-   */
-  def transform[S](f: (Try[T]) => Try[S]): Future[S] = {
-    this.then(t => {
-      val r = f.apply(t)
-
-      r.get()
-    })
-  }
-
-  def transformWith[S](f: (Try[T]) => Future[S]): Future[S] = {
-    val p = factory.createPromise[S](getExecutor)
-
-    this.onComplete(t => p.tryCompleteWith(f.apply(t)))
-
-    p.future()
-  }
-
   def collect[S](pf: PartialFunction[T, S]): Future[S] = {
-    this.then((t: Try[T]) => {
+    this.transform((t: Try[T]) => {
       val r = t.get()
 
       pf.applyOrElse(r, (v: T) => throw new NoSuchElementException("Future.collect partial function is not defined at: " + r) with NoStackTrace)
@@ -87,7 +68,7 @@ trait ComprehensiveFuture[T] extends Future[T] with Awaitable[T] {
   }
 
   def failed: Future[Throwable] = {
-    this.then((t: Try[T]) => {
+    this.transform((t: Try[T]) => {
       try {
         t.get()
         throw new NoSuchElementException("Future.failed not completed with a throwable.") with NoStackTrace
@@ -103,7 +84,7 @@ trait ComprehensiveFuture[T] extends Future[T] with Awaitable[T] {
    * If U would be = T we could directly call {@link #orElse} here.
    */
   def fallbackTo[U >: T](that: Future[U]): Future[U] = {
-    this.then[U]((t: Try[T]) => {
+    this.transform[U]((t: Try[T]) => {
       if (t.hasException) {
         try {
           that.get
@@ -121,7 +102,7 @@ trait ComprehensiveFuture[T] extends Future[T] with Awaitable[T] {
    * We could implement this by using {@link #guard} if the type of the exception would not matter.
    */
   def filter(p: (T) => Boolean): Future[T] = {
-    this.then[T]((t: Try[T]) => {
+    this.transform[T]((t: Try[T]) => {
       val v: T = t.get() // rethrows the exception if necessary
 
       if (!p.apply(v)) {
@@ -143,10 +124,9 @@ trait ComprehensiveFuture[T] extends Future[T] with Awaitable[T] {
   def flatten[S](implicit ev: <:<[T, Future[S]]): Future[S] = flatMap(ev)
 
   /**
-   * Basically {@link #then} but passing only the successful value.
    * Scala FP does implement this with the help of transform and uses the map method of Try.
    */
-  def map[S](f: (T) => S): Future[S] = this.then(t => f.apply(t.get()))
+  def map[S](f: (T) => S): Future[S] = this.transform(t => f.apply(t.get()))
 
   /**
    * Scala FP does implement this the same way. Copy&paste.
@@ -164,7 +144,7 @@ trait ComprehensiveFuture[T] extends Future[T] with Awaitable[T] {
    * Scala FP does implement this with transform and recover of Scala's Try type.
    */
   def recover[U >: T](pf: PartialFunction[Throwable, U]): Future[U] = {
-    this.then(
+    this.transform(
       (t) => {
         try {
           t.get()
@@ -205,7 +185,7 @@ trait ComprehensiveFuture[T] extends Future[T] with Awaitable[T] {
    * Scala FP uses transform for this implementation.
    */
   def transform[S](s: (T) => S, f: (Throwable) => Throwable): Future[S] = {
-    this.then(t =>
+    this.transform(t =>
       {
         try {
           s.apply(t.get())
@@ -366,7 +346,7 @@ object ComprehensiveFuture {
    * We can simply use {@link Util#firstN} with a value of 1.
    * Scala FP has to implement this manually.
    */
-  final def firstCompletedOf[T](ex: Executor, u: Util, futures: TraversableOnce[Future[T]]): Future[T] = u.firstN(ex, futures.toVector, 1).then(t => t.get().apply(0)._2.get())
+  final def firstCompletedOf[T](ex: Executor, u: Util, futures: TraversableOnce[Future[T]]): Future[T] = u.firstN(ex, futures.toVector, 1).transform(t => t.get().apply(0)._2.get())
 
   // TODO #15 Implement foldLeft
 
@@ -390,7 +370,7 @@ object ComprehensiveFuture {
   /**
    * This has to be a method here since it requires a factory, too.
    */
-  final def unit(f: Factory, ex: Executor): Future[Unit] = fromTry(f, ex, new Try[Unit]())
+  final def unit(f: Factory, ex: Executor): Future[Unit] = fromTry(f, ex, new Try[Unit](()))
 
   // TODO #15 Implement never
 }

@@ -1,4 +1,6 @@
-package tdauth.futuresandpromises
+package tdauth.futuresandpromises.core
+
+import tdauth.futuresandpromises.Try
 
 /**
   * Abstract type for the current value stored by a future/promise.
@@ -15,7 +17,7 @@ case class ParentCallbackEntry(final val left: CallbackEntry, final val right: C
 /**
   * Indicates that there is no callback.
   */
-case class EmptyCallbackEntry() extends CallbackEntry
+case object Noop extends CallbackEntry
 
 /**
   * Single backwards linked list of callbacks.
@@ -29,7 +31,3 @@ case class LinkedCallbackEntry[T](final val c: (Try[T]) => Unit, final val prev:
   * If there is no link to previous callback entry yet, only the callback has to be stored.
   */
 case class SingleCallbackEntry[T](final val c: (Try[T]) => Unit) extends CallbackEntry
-
-object CallbackEntry {
-  val Noop = EmptyCallbackEntry()
-}

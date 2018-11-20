@@ -1,16 +1,17 @@
-package tdauth.futuresandpromises.cas
+package tdauth.futuresandpromises.core.cas
 
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
 
-import tdauth.futuresandpromises.{AbstractFPTest, FP, JavaExecutor}
+import tdauth.futuresandpromises.core.FP
+import tdauth.futuresandpromises.{AbstractFPTest, JavaExecutor}
 
 import scala.collection.mutable.ListBuffer
 
-class PrimCASPromiseLinkingTest extends AbstractFPTest {
-  type FPLinkingType = PrimCASPromiseLinking[Int]
+class CCASPromiseLinkingTest extends AbstractFPTest {
+  type FPLinkingType = CCASPromiseLinking[Int]
 
-  override def getTestName: String = "PrimCASPromiseLinkingTest"
+  override def getTestName: String = "CCASPromiseLinkingTest"
   override def getFP: FP[Int] = getFPPromiseLinking
 
   private val executor = new JavaExecutor(Executors.newSingleThreadExecutor())
@@ -154,5 +155,5 @@ class PrimCASPromiseLinkingTest extends AbstractFPTest {
     counter.get() shouldEqual 2
   }
 
-  def getFPPromiseLinking: PrimCASPromiseLinking[Int] = new PrimCASPromiseLinking[Int](executor)
+  def getFPPromiseLinking: FPLinkingType = new FPLinkingType(executor)
 }

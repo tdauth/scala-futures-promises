@@ -37,7 +37,7 @@ object Combinators {
    * Uses {@link Util#firstN} instead of a promise-based implementation.
    */
   def firstWithFirstN[T](t: Future[T], other: Future[T]): Future[T] = {
-    ScalaFPUtil.firstN[T](t.getExecutor, Vector(t, other), 1).then((t: Try[Util#FirstNResultType[T]]) => {
+    ScalaFPUtil.firstN[T](t.getExecutor, Vector(t, other), 1).transform((t: Try[Util#FirstNResultType[T]]) => {
       t.get()(0)._2.get()
     })
   }
@@ -46,7 +46,7 @@ object Combinators {
    * Uses {@link Util#firstNSucc} instead of a promise-based implementation.
    */
   def firstSuccWithFirstNSucc[T](t: Future[T], other: Future[T]): Future[T] = {
-    ScalaFPUtil.firstNSucc[T](t.getExecutor, Vector(t, other), 1).then((t: Try[Util#FirstNSuccResultType[T]]) => {
+    ScalaFPUtil.firstNSucc[T](t.getExecutor, Vector(t, other), 1).transform((t: Try[Util#FirstNSuccResultType[T]]) => {
       t.get()(0)._2
     })
   }
@@ -83,13 +83,13 @@ object Combinators {
        * </pre>
        */
       def first(c: Vector[Future[T]], index: Int = 0, lastIndex: Int = c.size - 1): Future[Tuple2[Int, Try[T]]] = {
-        val h = c.head.then((t: Try[T]) => (index, t))
+        val h = c.head.transform((t: Try[T]) => (index, t))
         if (index < lastIndex) h.first(first(c.tail, index + 1, lastIndex)) else h
       }
 
       var result = first(c)
 
-      result.thenWith((t: Try[Tuple2[Int, Try[T]]]) => {
+      result.transformWith((t: Try[Tuple2[Int, Try[T]]]) => {
         val r = t.get()
         val index = r._1
         val realIndex = indexMap(index)

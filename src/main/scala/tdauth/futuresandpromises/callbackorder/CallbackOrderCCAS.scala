@@ -2,14 +2,14 @@ package tdauth.futuresandpromises.callbackorder
 
 import java.util.concurrent.Executors
 
+import tdauth.futuresandpromises.JavaExecutor
+import tdauth.futuresandpromises.core.cas.CCAS
+
 import scala.concurrent.SyncVar
 
-import tdauth.futuresandpromises.JavaExecutor
-import tdauth.futuresandpromises.cas.PrimCAS
-
-object CallbackOrderPrimCas extends App {
+object CallbackOrderCCAS extends App {
   val ex = new JavaExecutor(Executors.newSingleThreadExecutor)
-  val p = new PrimCAS[Int](ex)
+  val p = new CCAS[Int](ex)
 
   def callback(v: Int, s: SyncVar[List[Int]]) {
     val updated = s.take()

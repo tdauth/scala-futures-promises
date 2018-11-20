@@ -1,8 +1,9 @@
-package tdauth.futuresandpromises.cas
+package tdauth.futuresandpromises.core.cas
 
 import java.util.concurrent.atomic.AtomicReference
 
 import tdauth.futuresandpromises._
+import tdauth.futuresandpromises.core.{Core, FP, Noop}
 
 import scala.annotation.tailrec
 import scala.util.Left
@@ -12,15 +13,15 @@ import scala.util.Left
   * Thread-safety by CAS operations.
   * This is similiar to Scala FP's implementation.
   */
-class PrimCAS[T](ex: Executor) extends AtomicReference[FP[T]#Value](Right(CallbackEntry.Noop)) with FP[T] {
+class CCAS[T](ex: Executor) extends AtomicReference[FP[T]#Value](Right(Noop)) with FP[T] {
 
-  override def getExecutor: Executor = ex
+  override def getExecutorC: Executor = ex
 
-  override def newP[S](ex: Executor): Base[S] = new PrimCAS[S](ex)
+  override def newC[S](ex: Executor): Core[S] = new CCAS[S](ex)
 
-  override def getP: T = super[FP].getResultWithMVar
+  override def getC: T = super[FP].getResultWithMVar
 
-  override def isReady: Boolean = {
+  override def isReadyC: Boolean = {
     val s = get
     s match {
       case Left(_)  => true
@@ -28,9 +29,9 @@ class PrimCAS[T](ex: Executor) extends AtomicReference[FP[T]#Value](Right(Callba
     }
   }
 
-  override def tryComplete(v: Try[T]): Boolean = tryCompleteInternal(v)
+  override def tryCompleteC(v: Try[T]): Boolean = tryCompleteInternal(v)
 
-  override def onComplete(c: Callback): Unit = onCompleteInternal(c)
+  override def onCompleteC(c: Callback): Unit = onCompleteInternal(c)
 
   @tailrec private def tryCompleteInternal(v: Try[T]): Boolean = {
     val s = get

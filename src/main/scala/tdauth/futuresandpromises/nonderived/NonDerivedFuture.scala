@@ -17,7 +17,7 @@ class NonDerivedFuture[T](val future: scala.concurrent.Future[T], ex: Executor) 
   override def factory: Factory = new NonDerivedFactory
 
   // Derived methods:
-  override def then[S](f: (Try[T]) => S): Future[S] = new NonDerivedFuture[S](future.transform[S]((t: scala.util.Try[T]) => {
+  override def transform[S](f: (Try[T]) => S): Future[S] = new NonDerivedFuture[S](future.transform[S]((t: scala.util.Try[T]) => {
     try {
       Success(f.apply(new Try[T](t)))
     } catch {
@@ -25,7 +25,7 @@ class NonDerivedFuture[T](val future: scala.concurrent.Future[T], ex: Executor) 
     }
   })(this.ex.asInstanceOf[NonDerivedExecutor].executionContext), this.getExecutor)
 
-  override def thenWith[S](f: (Try[T]) => Future[S]): Future[S] = new NonDerivedFuture[S](future.transformWith[S]((t: scala.util.Try[T]) => {
+  override def transformWith[S](f: (Try[T]) => Future[S]): Future[S] = new NonDerivedFuture[S](future.transformWith[S]((t: scala.util.Try[T]) => {
     f.apply(new Try[T](t)).asInstanceOf[NonDerivedFuture[S]].future
   })(this.ex.asInstanceOf[NonDerivedExecutor].executionContext), this.getExecutor)
 

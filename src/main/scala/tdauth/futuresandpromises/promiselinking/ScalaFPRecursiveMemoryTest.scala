@@ -23,7 +23,7 @@ object ScalaFPRecursiveMemoryTest extends App {
     val array = new Array[Byte](arraySize)
     val p = new ScalaFPPromise[Int]
     p.trySuccess(i)
-    p.future.thenWith(t => {
+    p.future.transformWith(t => {
       val i = t.get
       if (i == 0) {
         val p = new ScalaFPPromise[Int]

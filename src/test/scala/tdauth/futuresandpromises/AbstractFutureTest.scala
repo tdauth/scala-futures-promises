@@ -12,7 +12,7 @@ abstract class AbstractFutureTest extends AbstractUnitSpec {
 
   it should "get its callback be called asynchronously" in {
     val p = getPromise
-    val future = p.future.then(t => t.get() + 10)
+    val future = p.future.transform(t => t.get() + 10)
     p.trySuccess(10)
     future.get should be(20)
   }

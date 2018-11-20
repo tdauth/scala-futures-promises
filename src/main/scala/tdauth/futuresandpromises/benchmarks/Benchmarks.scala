@@ -5,18 +5,20 @@ import java.util.Locale
 import java.util.concurrent.locks.ReentrantLock
 import java.util.concurrent.{ExecutorService, Executors, ThreadFactory}
 
-import tdauth.futuresandpromises.cas.{PrimCAS, PrimCASOneCallbackAtATime, PrimCASPromiseLinking}
-import tdauth.futuresandpromises.mvar.PrimMVar
-import tdauth.futuresandpromises.stm.PrimSTM
-import tdauth.futuresandpromises.{Executor, FP, JavaExecutor}
+import tdauth.futuresandpromises.core.FP
+import tdauth.futuresandpromises.core.cas.{CCAS, CCASOneCallbackAtATime, CCASPromiseLinking}
+import tdauth.futuresandpromises.core.mvar.CMVar
+import tdauth.futuresandpromises.core.stm.CSTM
+import tdauth.futuresandpromises.{Executor, JavaExecutor}
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext}
 import scala.util.Success
+import scala.util.control.NonFatal
 
 /**
   * Compares the performance of our FP implementation to the performance of Scala FP and Twitter Util.
-  * We have five different performance tests but test 1 and test 2 use the same method [[Benchmarks#perf1]].
+  * We have five different performance tests but test 1 and test 2 use the same method [[Benchmarks#perf1Prim]].
   * Therefore, we only have four different `perf<n>` methods.
   */
 object Benchmarks extends App {
@@ -36,8 +38,8 @@ object Benchmarks extends App {
   // test 4
   val TEST_4_N = 2000000
   // test 5
-  // TODO #32 Increase the number when promise linking has compression.
-  val TEST_5_N = 20000000
+  // TODO #32 Increase the number when promise linking has compression but prevent "java.lang.OutOfMemoryError: GC overhead limit exceeded" especially for Prim CAS which has no promise linking.
+  val TEST_5_N = 10000000
 
   deletePlotFiles
 
@@ -89,12 +91,12 @@ object Benchmarks extends App {
     runTest("cas", testNumber, cores, test)
   }
   def runTest1PrimCas =
-    runTestForCores("Test 1", cores => runTestPrimCAS(1, cores, () => perf1Prim(TEST_1_N, TEST_1_M, TEST_1_K, cores, ex => new PrimCAS(ex))))
+    runTestForCores("Test 1", cores => runTestPrimCAS(1, cores, () => perf1Prim(TEST_1_N, TEST_1_M, TEST_1_K, cores, ex => new CCAS(ex))))
   def runTest2PrimCas =
-    runTestForCores("Test 2", cores => runTestPrimCAS(2, cores, () => perf1Prim(TEST_2_N, TEST_2_M, TEST_2_K, cores, ex => new PrimCAS(ex))))
-  def runTest3PrimCas = runTestForCores("Test 3", cores => runTestPrimCAS(3, cores, () => perf2Prim(TEST_3_N, cores, ex => new PrimCAS(ex))))
-  def runTest4PrimCas = runTestForCores("Test 4", cores => runTestPrimCAS(4, cores, () => perf3Prim(TEST_4_N, cores, ex => new PrimCAS(ex))))
-  def runTest5PrimCas = runTestForCores("Test 5", cores => runTestPrimCAS(5, cores, () => perf4Prim(TEST_5_N, cores, ex => new PrimCAS(ex))))
+    runTestForCores("Test 2", cores => runTestPrimCAS(2, cores, () => perf1Prim(TEST_2_N, TEST_2_M, TEST_2_K, cores, ex => new CCAS(ex))))
+  def runTest3PrimCas = runTestForCores("Test 3", cores => runTestPrimCAS(3, cores, () => perf2Prim(TEST_3_N, cores, ex => new CCAS(ex))))
+  def runTest4PrimCas = runTestForCores("Test 4", cores => runTestPrimCAS(4, cores, () => perf3Prim(TEST_4_N, cores, ex => new CCAS(ex))))
+  def runTest5PrimCas = runTestForCores("Test 5", cores => runTestPrimCAS(5, cores, () => perf4Prim(TEST_5_N, cores, ex => new CCAS(ex))))
   def runAllTestsPrimCas {
     runTest1PrimCas
     runTest2PrimCas
@@ -110,17 +112,17 @@ object Benchmarks extends App {
   def runTest1PrimCasOneCallbackAtATime =
     runTestForCores(
       "Test 1",
-      cores => runTestPrimCASOneCallbackAtATime(1, cores, () => perf1Prim(TEST_1_N, TEST_1_M, TEST_1_K, cores, ex => new PrimCASOneCallbackAtATime(ex))))
+      cores => runTestPrimCASOneCallbackAtATime(1, cores, () => perf1Prim(TEST_1_N, TEST_1_M, TEST_1_K, cores, ex => new CCASOneCallbackAtATime(ex))))
   def runTest2PrimCasOneCallbackAtATime =
     runTestForCores(
       "Test 2",
-      cores => runTestPrimCASOneCallbackAtATime(2, cores, () => perf1Prim(TEST_2_N, TEST_2_M, TEST_2_K, cores, ex => new PrimCASOneCallbackAtATime(ex))))
+      cores => runTestPrimCASOneCallbackAtATime(2, cores, () => perf1Prim(TEST_2_N, TEST_2_M, TEST_2_K, cores, ex => new CCASOneCallbackAtATime(ex))))
   def runTest3PrimCasOneCallbackAtATime =
-    runTestForCores("Test 3", cores => runTestPrimCASOneCallbackAtATime(3, cores, () => perf2Prim(TEST_3_N, cores, ex => new PrimCASOneCallbackAtATime(ex))))
+    runTestForCores("Test 3", cores => runTestPrimCASOneCallbackAtATime(3, cores, () => perf2Prim(TEST_3_N, cores, ex => new CCASOneCallbackAtATime(ex))))
   def runTest4PrimCasOneCallbackAtATime =
-    runTestForCores("Test 4", cores => runTestPrimCASOneCallbackAtATime(4, cores, () => perf3Prim(TEST_4_N, cores, ex => new PrimCASOneCallbackAtATime(ex))))
+    runTestForCores("Test 4", cores => runTestPrimCASOneCallbackAtATime(4, cores, () => perf3Prim(TEST_4_N, cores, ex => new CCASOneCallbackAtATime(ex))))
   def runTest5PrimCasOneCallbackAtATime =
-    runTestForCores("Test 5", cores => runTestPrimCASOneCallbackAtATime(5, cores, () => perf4Prim(TEST_5_N, cores, ex => new PrimCASOneCallbackAtATime(ex))))
+    runTestForCores("Test 5", cores => runTestPrimCASOneCallbackAtATime(5, cores, () => perf4Prim(TEST_5_N, cores, ex => new CCASOneCallbackAtATime(ex))))
   def runAllTestsPrimCasOneCallbackAtATime {
     runTest1PrimCasOneCallbackAtATime
     runTest2PrimCasOneCallbackAtATime
@@ -135,16 +137,16 @@ object Benchmarks extends App {
   }
   def runTest1PrimCasPromiseLinking =
     runTestForCores("Test 1",
-                    cores => runTestPrimCASPromiseLinking(1, cores, () => perf1Prim(TEST_1_N, TEST_1_M, TEST_1_K, cores, ex => new PrimCASPromiseLinking(ex))))
+                    cores => runTestPrimCASPromiseLinking(1, cores, () => perf1Prim(TEST_1_N, TEST_1_M, TEST_1_K, cores, ex => new CCASPromiseLinking(ex))))
   def runTest2PrimCasPromiseLinking =
     runTestForCores("Test 2",
-                    cores => runTestPrimCASPromiseLinking(2, cores, () => perf1Prim(TEST_2_N, TEST_2_M, TEST_2_K, cores, ex => new PrimCASPromiseLinking(ex))))
+                    cores => runTestPrimCASPromiseLinking(2, cores, () => perf1Prim(TEST_2_N, TEST_2_M, TEST_2_K, cores, ex => new CCASPromiseLinking(ex))))
   def runTest3PrimCasPromiseLinking =
-    runTestForCores("Test 3", cores => runTestPrimCASPromiseLinking(3, cores, () => perf2Prim(TEST_3_N, cores, ex => new PrimCASPromiseLinking(ex))))
+    runTestForCores("Test 3", cores => runTestPrimCASPromiseLinking(3, cores, () => perf2Prim(TEST_3_N, cores, ex => new CCASPromiseLinking(ex))))
   def runTest4PrimCasPromiseLinking =
-    runTestForCores("Test 4", cores => runTestPrimCASPromiseLinking(4, cores, () => perf3Prim(TEST_4_N, cores, ex => new PrimCASPromiseLinking(ex))))
+    runTestForCores("Test 4", cores => runTestPrimCASPromiseLinking(4, cores, () => perf3Prim(TEST_4_N, cores, ex => new CCASPromiseLinking(ex))))
   def runTest5PrimCasPromiseLinking =
-    runTestForCores("Test 5", cores => runTestPrimCASPromiseLinking(5, cores, () => perf4Prim(TEST_5_N, cores, ex => new PrimCASPromiseLinking(ex))))
+    runTestForCores("Test 5", cores => runTestPrimCASPromiseLinking(5, cores, () => perf4Prim(TEST_5_N, cores, ex => new CCASPromiseLinking(ex))))
   def runAllTestsPrimCasPromiseLinking {
     runTest1PrimCasPromiseLinking
     runTest2PrimCasPromiseLinking
@@ -158,11 +160,11 @@ object Benchmarks extends App {
     runTest("mvar", testNumber, cores, test)
   }
   def runTest1PrimMVar: Unit =
-    runTestForCores("Test 1", cores => runTestPrimMVar(1, cores, () => perf1Prim(TEST_1_N, TEST_1_M, TEST_1_K, cores, ex => new PrimMVar(ex))))
+    runTestForCores("Test 1", cores => runTestPrimMVar(1, cores, () => perf1Prim(TEST_1_N, TEST_1_M, TEST_1_K, cores, ex => new CMVar(ex))))
   def runTest2PrimMVar: Unit =
-    runTestForCores("Test 2", cores => runTestPrimMVar(2, cores, () => perf1Prim(TEST_2_N, TEST_2_M, TEST_2_K, cores, ex => new PrimMVar(ex))))
-  def runTest3PrimMVar: Unit = runTestForCores("Test 3", cores => runTestPrimMVar(3, cores, () => perf2Prim(TEST_3_N, cores, ex => new PrimMVar(ex))))
-  def runTest4PrimMVar: Unit = runTestForCores("Test 4", cores => runTestPrimMVar(4, cores, () => perf3Prim(TEST_4_N, cores, ex => new PrimMVar(ex))))
+    runTestForCores("Test 2", cores => runTestPrimMVar(2, cores, () => perf1Prim(TEST_2_N, TEST_2_M, TEST_2_K, cores, ex => new CMVar(ex))))
+  def runTest3PrimMVar: Unit = runTestForCores("Test 3", cores => runTestPrimMVar(3, cores, () => perf2Prim(TEST_3_N, cores, ex => new CMVar(ex))))
+  def runTest4PrimMVar: Unit = runTestForCores("Test 4", cores => runTestPrimMVar(4, cores, () => perf3Prim(TEST_4_N, cores, ex => new CMVar(ex))))
   def runAllTestsPrimMVar {
     runTest1PrimMVar
     runTest2PrimMVar
@@ -175,11 +177,11 @@ object Benchmarks extends App {
     runTest("stm", testNumber, cores, test)
   }
   def runTest1PrimStm: Unit =
-    runTestForCores("Test 1", cores => runTestPrimStm(1, cores, () => perf1Prim(TEST_1_N, TEST_1_M, TEST_1_K, cores, ex => new PrimSTM(ex))))
+    runTestForCores("Test 1", cores => runTestPrimStm(1, cores, () => perf1Prim(TEST_1_N, TEST_1_M, TEST_1_K, cores, ex => new CSTM(ex))))
   def runTest2PrimStm: Unit =
-    runTestForCores("Test 2", cores => runTestPrimStm(2, cores, () => perf1Prim(TEST_2_N, TEST_2_M, TEST_2_K, cores, ex => new PrimSTM(ex))))
-  def runTest3PrimStm: Unit = runTestForCores("Test 3", cores => runTestPrimStm(3, cores, () => perf2Prim(TEST_3_N, cores, ex => new PrimSTM(ex))))
-  def runTest4PrimStm: Unit = runTestForCores("Test 4", cores => runTestPrimStm(4, cores, () => perf3Prim(TEST_4_N, cores, ex => new PrimSTM(ex))))
+    runTestForCores("Test 2", cores => runTestPrimStm(2, cores, () => perf1Prim(TEST_2_N, TEST_2_M, TEST_2_K, cores, ex => new CSTM(ex))))
+  def runTest3PrimStm: Unit = runTestForCores("Test 3", cores => runTestPrimStm(3, cores, () => perf2Prim(TEST_3_N, cores, ex => new CSTM(ex))))
+  def runTest4PrimStm: Unit = runTestForCores("Test 4", cores => runTestPrimStm(4, cores, () => perf3Prim(TEST_4_N, cores, ex => new CSTM(ex))))
   def runAllTestsPrimStm {
     runTest1PrimStm
     runTest2PrimStm
@@ -195,13 +197,15 @@ object Benchmarks extends App {
       plotFileSuffix <- Vector("twitterutil", "scalafp", "cas", "mvar", "stm")
 
     } yield new File(getPlotFileName(testNumber, plotFileSuffix))
-    files.filter(_ exists).foreach(_ delete)
+    files.filter(_.exists).foreach(_.delete)
   }
 
   def writeEntryIntoPlotFile(plotFilePath: String, cores: Int, time: Double) {
     val fileWriter = new FileWriter(plotFilePath, true)
     try {
       fileWriter.append("%d  %.2f\n".formatLocal(Locale.US, cores, time))
+    } catch {
+      case NonFatal(t) => println(s"Exception: ${t}")
     } finally fileWriter.close()
   }
 
@@ -277,11 +281,11 @@ object Benchmarks extends App {
       cores,
       () => perf1TwitterUtil(n, m, k, cores),
       () => perf1ScalaFP(n, m, k, cores),
-      () => perf1Prim(n, m, k, cores, ex => new PrimCAS(ex)),
-      () => perf1Prim(n, m, k, cores, ex => new PrimMVar(ex)),
-      () => perf1Prim(n, m, k, cores, ex => new PrimSTM(ex)),
-      () => perf1Prim(n, m, k, cores, ex => new PrimCASOneCallbackAtATime(ex)),
-      () => perf1Prim(n, m, k, cores, ex => new PrimCASPromiseLinking(ex))
+      () => perf1Prim(n, m, k, cores, ex => new CCAS(ex)),
+      () => perf1Prim(n, m, k, cores, ex => new CMVar(ex)),
+      () => perf1Prim(n, m, k, cores, ex => new CSTM(ex)),
+      () => perf1Prim(n, m, k, cores, ex => new CCASOneCallbackAtATime(ex)),
+      () => perf1Prim(n, m, k, cores, ex => new CCASPromiseLinking(ex))
     )
   }
 
@@ -294,11 +298,11 @@ object Benchmarks extends App {
       cores,
       () => perf1TwitterUtil(n, m, k, cores),
       () => perf1ScalaFP(n, m, k, cores),
-      () => perf1Prim(n, m, k, cores, ex => new PrimCAS(ex)),
-      () => perf1Prim(n, m, k, cores, ex => new PrimMVar(ex)),
-      () => perf1Prim(n, m, k, cores, ex => new PrimSTM(ex)),
-      () => perf1Prim(n, m, k, cores, ex => new PrimCASOneCallbackAtATime(ex)),
-      () => perf1Prim(n, m, k, cores, ex => new PrimCASPromiseLinking(ex))
+      () => perf1Prim(n, m, k, cores, ex => new CCAS(ex)),
+      () => perf1Prim(n, m, k, cores, ex => new CMVar(ex)),
+      () => perf1Prim(n, m, k, cores, ex => new CSTM(ex)),
+      () => perf1Prim(n, m, k, cores, ex => new CCASOneCallbackAtATime(ex)),
+      () => perf1Prim(n, m, k, cores, ex => new CCASPromiseLinking(ex))
     )
   }
 
@@ -309,11 +313,11 @@ object Benchmarks extends App {
       cores,
       () => perf2TwitterUtil(n, cores),
       () => perf2ScalaFP(n, cores),
-      () => perf2Prim(n, cores, ex => new PrimCAS(ex)),
-      () => perf2Prim(n, cores, ex => new PrimMVar(ex)),
-      () => perf2Prim(n, cores, ex => new PrimSTM(ex)),
-      () => perf2Prim(n, cores, ex => new PrimCASOneCallbackAtATime(ex)),
-      () => perf2Prim(n, cores, ex => new PrimCASPromiseLinking(ex))
+      () => perf2Prim(n, cores, ex => new CCAS(ex)),
+      () => perf2Prim(n, cores, ex => new CMVar(ex)),
+      () => perf2Prim(n, cores, ex => new CSTM(ex)),
+      () => perf2Prim(n, cores, ex => new CCASOneCallbackAtATime(ex)),
+      () => perf2Prim(n, cores, ex => new CCASPromiseLinking(ex))
     )
   }
 
@@ -324,11 +328,11 @@ object Benchmarks extends App {
       cores,
       () => perf3TwitterUtil(n, cores),
       () => perf3ScalaFP(n, cores),
-      () => perf3Prim(n, cores, ex => new PrimCAS(ex)),
-      () => perf3Prim(n, cores, ex => new PrimMVar(ex)),
-      () => perf3Prim(n, cores, ex => new PrimSTM(ex)),
-      () => perf3Prim(n, cores, ex => new PrimCASOneCallbackAtATime(ex)),
-      () => perf3Prim(n, cores, ex => new PrimCASPromiseLinking(ex))
+      () => perf3Prim(n, cores, ex => new CCAS(ex)),
+      () => perf3Prim(n, cores, ex => new CMVar(ex)),
+      () => perf3Prim(n, cores, ex => new CSTM(ex)),
+      () => perf3Prim(n, cores, ex => new CCASOneCallbackAtATime(ex)),
+      () => perf3Prim(n, cores, ex => new CCASPromiseLinking(ex))
     )
   }
 
@@ -343,11 +347,11 @@ object Benchmarks extends App {
        * TODO #32 Out of memory exception: "java.lang.OutOfMemoryError: GC overhead limit exceeded". Does this mean that the GC is always busy?
        * https://stackoverflow.com/questions/1393486/error-java-lang-outofmemoryerror-gc-overhead-limit-exceeded
        */
-      () => perf4Prim(n, cores, ex => new PrimCAS(ex)),
-      () => perf4Prim(n, cores, ex => new PrimMVar(ex)),
-      () => perf4Prim(n, cores, ex => new PrimSTM(ex)),
-      () => perf4Prim(n, cores, ex => new PrimCASOneCallbackAtATime(ex)),
-      () => perf4Prim(n, cores, ex => new PrimCASPromiseLinking(ex))
+      () => perf4Prim(n, cores, ex => new CCAS(ex)),
+      () => perf4Prim(n, cores, ex => new CMVar(ex)),
+      () => perf4Prim(n, cores, ex => new CSTM(ex)),
+      () => perf4Prim(n, cores, ex => new CCASOneCallbackAtATime(ex)),
+      () => perf4Prim(n, cores, ex => new CCASPromiseLinking(ex))
     )
   }
 
@@ -558,7 +562,7 @@ object Benchmarks extends App {
           val successfulP = com.twitter.util.Promise[Int]
           successfulP.setValue(10)
           successfulP
-        } else linkPromises(i - 1))
+        } else { linkPromises(i - 1) })
     }
 
     val p = linkPromises(n)
@@ -759,13 +763,14 @@ object Benchmarks extends App {
   }
 
   /**
-    * Creates a chain of promises by linking them with [[FP#transformWith]] which uses [[FP#tryCompleteWith]].
+    * Creates a chain of promises by linking them with [[tdauth.futuresandpromises.core.FP.transformWith]] which uses
+    * [[tdauth.futuresandpromises.core.FP.tryCompleteWith]].
     * The second promise is completed with the first one, the third with the second one etc.
     * The transformation uses an already completed promise, so the transformation takes place as soon as the final promise
     * of the chain is completed.
     *
-    * We cannot use [[FP#tryCompleteWith]] directly since neither Scala FP nor Twitter Util implement promise linking for this method
-    * but for `transformWith` for Scala FP and `transform` for Twitter Util.
+    * We cannot use [[tdauth.futuresandpromises.core.FP.tryCompleteWith]] directly since neither Scala FP nor Twitter
+    * Util implement promise linking for this method but for `transformWith` for Scala FP and `transform` for Twitter Util.
     *
     * This benchmark is similiar to [[https://github.com/scala/scala/blob/2.12.x/test/files/run/t7336.scala t7336]] but without creating an array in the closure or trying to
     * exceed the memory.

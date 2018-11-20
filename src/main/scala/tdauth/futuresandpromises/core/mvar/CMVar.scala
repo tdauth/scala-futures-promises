@@ -1,23 +1,24 @@
-package tdauth.futuresandpromises.mvar
+package tdauth.futuresandpromises.core.mvar
 
 import tdauth.futuresandpromises._
+import tdauth.futuresandpromises.core.{Noop, Core, FP}
 
 import scala.concurrent.SyncVar
 import scala.util.Left
 
-class PrimMVar[T](ex: Executor) extends SyncVar[FP[T]#Value] with FP[T] {
-  put(Right(CallbackEntry.Noop))
+class CMVar[T](ex: Executor) extends SyncVar[FP[T]#Value] with FP[T] {
+  put(Right(Noop))
 
   /*
    * We need a second MVar to signal that the future has a result.
    */
   val sig = new SyncVar[Unit]
 
-  override def getExecutor: Executor = ex
+  override def getExecutorC: Executor = ex
 
-  override def newP[S](ex: Executor): Base[S] = new PrimMVar[S](ex)
+  override def newC[S](ex: Executor): Core[S] = new CMVar[S](ex)
 
-  override def getP: T = {
+  override def getC: T = {
     sig.get
     get.left.get.get()
   }
@@ -25,9 +26,9 @@ class PrimMVar[T](ex: Executor) extends SyncVar[FP[T]#Value] with FP[T] {
   /**
     * In Haskell we could call isEmptyMVar.
     */
-  override def isReady: Boolean = sig.isSet
+  override def isReadyC: Boolean = sig.isSet
 
-  override def tryComplete(v: Try[T]): Boolean = {
+  override def tryCompleteC(v: Try[T]): Boolean = {
     val s = take()
     s match {
       case Left(_) => {
@@ -37,14 +38,14 @@ class PrimMVar[T](ex: Executor) extends SyncVar[FP[T]#Value] with FP[T] {
       }
       case Right(x) => {
         put(Left(v))
-        sig.put()
+        sig.put(())
         dispatchCallbacks(v, x)
         true
       }
     }
   }
 
-  override def onComplete(c: Callback): Unit = {
+  override def onCompleteC(c: Callback): Unit = {
     val s = take()
     s match {
       case Left(x) => {

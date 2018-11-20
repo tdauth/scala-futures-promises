@@ -4,8 +4,7 @@ import java.util.concurrent.Executors
 
 import tdauth.futuresandpromises.Executor
 import tdauth.futuresandpromises.JavaExecutor
-import tdauth.futuresandpromises.stm.PrimSTM
-
+import tdauth.futuresandpromises.core.stm.CSTM
 /**
  * Since it seems that the memory consumption by callbacks has been fixed and the benchmark from Scala FP does
  * not work anymore (see [[ScalaFPRecursiveMemoryTest]]), we have to produce our own example based on the answer in
@@ -13,7 +12,7 @@ import tdauth.futuresandpromises.stm.PrimSTM
  *
  * This produces a `java.lang.OutOfMemoryError: Java heap space` when no promise linking is implemented.
  */
-class PromiseChainPrimSTM(ex: Executor, arraySize: Int) extends PrimSTM[Unit](ex) {
+class PromiseChainCSTM(ex: Executor, arraySize: Int) extends CSTM[Unit](ex) {
   val array = new Array[Byte](arraySize)
 
   override def finalize: Unit = {
@@ -22,17 +21,17 @@ class PromiseChainPrimSTM(ex: Executor, arraySize: Int) extends PrimSTM[Unit](ex
   }
 }
 
-object PromiseChainPrimSTM extends App {
+object PromiseChainCSTM extends App {
   val arraySize = 1000000
   val tooManyArrays = (Runtime.getRuntime().totalMemory() / arraySize).toInt + 1
 
   {
     val ex = new JavaExecutor(Executors.newSingleThreadExecutor())
-    val start = new PromiseChainPrimSTM(ex, arraySize)
+    val start = new PromiseChainCSTM(ex, arraySize)
     var previous = start
-    var current: PromiseChainPrimSTM = null
+    var current: PromiseChainCSTM = null
     for (i <- 1 until tooManyArrays) {
-      current = new PromiseChainPrimSTM(ex, arraySize)
+      current = new PromiseChainCSTM(ex, arraySize)
       current.tryCompleteWith(previous)
       previous = current
     }

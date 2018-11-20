@@ -8,6 +8,9 @@ scalaVersion := "2.12.7"
 
 scalacOptions := Seq("-unchecked", "-deprecation", "-feature")
 
+// disable JIT compilation at runtime which could affect the performance time
+javaOptions += "-Djava.compiler=NONE"
+
 // set the main class for 'sbt run'
 mainClass in (Compile, run) := Some("tdauth.futuresandpromises.benchmarks.Benchmarks")
 // set the main class for packaging the main jar

@@ -1,15 +1,16 @@
-package tdauth.futuresandpromises.cas
+package tdauth.futuresandpromises.core.cas
+
 import tdauth.futuresandpromises._
 
 import scala.annotation.tailrec
 import scala.util.Left
 
 /**
-  * The same as [[PrimCAS]] but dues only submit one callback after another to the executor when the future is completed.
+  * The same as [[CCAS]] but dues only submit one callback after another to the executor when the future is completed.
   */
-class PrimCASOneCallbackAtATime[T](ex: Executor) extends PrimCAS[T](ex) {
+class CCASOneCallbackAtATime[T](ex: Executor) extends CCAS[T](ex) {
 
-  override def tryComplete(v: Try[T]): Boolean = tryCompleteInternal(v)
+  override def tryCompleteC(v: Try[T]): Boolean = tryCompleteInternal(v)
 
   @tailrec private def tryCompleteInternal(v: Try[T]): Boolean = {
     val s = get

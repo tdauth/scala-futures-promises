@@ -31,7 +31,7 @@ object BecomeRaceScalaFP extends App {
   def callback(msg: String, x: Try[Int]): Unit = {
     val v = counter.incrementAndGet()
     println("%s: completes with value %d".format(msg, x.get))
-    if (v == 3) s.put()
+    if (v == 3) s.put(())
   }
 
   //p0.future.onComplete(x => callback("Respond p0", x))

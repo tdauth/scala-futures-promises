@@ -1,11 +1,10 @@
 package tdauth.futuresandpromises.a_memory
 
-import scala.concurrent.Await
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
-import scala.concurrent.duration.Duration
-
 import tdauth.futuresandpromises.AbstractUnitSpec
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{Await, Future}
+import scala.concurrent.duration.Duration
 
 /**
  * Start the name with A to run this test as the first one.

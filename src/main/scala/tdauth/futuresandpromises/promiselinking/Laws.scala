@@ -1,7 +1,5 @@
 package tdauth.futuresandpromises.promiselinking
 
-import tdauth.futuresandpromises.cas.PrimCAS
-
 object Laws {
 
   /**
