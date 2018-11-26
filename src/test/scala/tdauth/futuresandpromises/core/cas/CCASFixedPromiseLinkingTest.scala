@@ -8,10 +8,10 @@ import tdauth.futuresandpromises.{AbstractFPTest, JavaExecutor}
 
 import scala.collection.mutable.ListBuffer
 
-class CCASPromiseLinkingTest extends AbstractFPTest {
-  type FPLinkingType = CCASPromiseLinking[Int]
+class CCASFixedPromiseLinkingTest extends AbstractFPTest {
+  type FPLinkingType = CCASFixedPromiseLinking[Int]
 
-  override def getTestName: String = "CCASPromiseLinkingTest"
+  override def getTestName: String = "CCASFixedPromiseLinkingTest"
   override def getFP: FP[Int] = getFPPromiseLinking
 
   private val executor = new JavaExecutor(Executors.newSingleThreadExecutor())
@@ -36,8 +36,9 @@ class CCASPromiseLinkingTest extends AbstractFPTest {
     p0.tryCompleteWith(p1)
 
     p0.isListOfCallbacks() shouldEqual true
-    // the callbacks have been moved to p0
-    p0.getNumberOfCallbacks() shouldEqual 1
+    // In this solution the callbacks are not moved to p0.
+    p0.getNumberOfCallbacks() shouldEqual 0
+    p1.getNumberOfCallbacks() shouldEqual 1
     p1.isLinkTo(p0) shouldEqual true
 
     p1.trySuccess(10)
@@ -57,11 +58,14 @@ class CCASPromiseLinkingTest extends AbstractFPTest {
     p1.tryCompleteWith(p2)
 
     p0.isListOfCallbacks() shouldEqual true
-    // the callbacks have been moved to p0
-    p0.getNumberOfCallbacks() shouldEqual 2
+    // the callbacks are not moved to p0
+    p0.getNumberOfCallbacks() shouldEqual 0
+    p1.getNumberOfCallbacks() shouldEqual 1
+    p2.getNumberOfCallbacks() shouldEqual 1
     p1.isLinkTo(p0) shouldEqual true
-    // The compression makes sure that p2 does not link to p1 but directly to p2.
-    p2.isLinkTo(p0) shouldEqual true
+    // There is no compression in this solution. p2 is still a link to p1 and p1 links to p0.
+    p2.isLinkTo(p1) shouldEqual true
+    p1.isLinkTo(p0) shouldEqual true
 
     p2.trySuccess(10)
     p0.getP shouldEqual 10
@@ -96,21 +100,24 @@ class CCASPromiseLinkingTest extends AbstractFPTest {
 
     links.size shouldEqual n
     p.isListOfCallbacks() shouldEqual true
-    p.getNumberOfCallbacks() shouldEqual n
+    // In this solution the callbacks are not moved to p.
+    p.getNumberOfCallbacks() shouldEqual 0
     finalLink.isLink() shouldEqual true
-    finalLink.isLinkTo(p) shouldEqual true
+    // In this solution there is no compression. The final link still links to its next element.
+    finalLink.isLinkTo(p) shouldEqual false
 
-    def assertUncompletedChain(links: ListBuffer[FPLinkingType]): Unit = {
+    def assertUncompletedChain(links: ListBuffer[FPLinkingType], c: Int): Unit = {
       if (!links.isEmpty) {
         val l = links.head
         l.isLink shouldEqual true
-        // The compression lets all links directly link to p.
-        l.isLinkTo(p) shouldEqual true
-        if (links.tail ne null) assertUncompletedChain(links.tail)
+        // In this solution there is no compression. All links still link to the next element. Only the first link links to p.
+        val expectLinkToP = if (c < n) { false } else { true }
+        l.isLinkTo(p) shouldEqual expectLinkToP
+        if (links.tail ne null) assertUncompletedChain(links.tail, c - 1)
       }
     }
 
-    assertUncompletedChain(links)
+    assertUncompletedChain(links, n)
 
     finalLink.trySuccess(10)
 
@@ -122,9 +129,10 @@ class CCASPromiseLinkingTest extends AbstractFPTest {
     def assertCompletedChain(links: ListBuffer[FPLinkingType]): Unit = {
       if (!links.isEmpty) {
         val l = links.head
-        l.isLink shouldEqual true
-        l.isLinkTo(p) shouldEqual true
+        // In this solution all links will get the result value.
         l.isReady shouldEqual true
+        l.isLink() shouldEqual false
+        l.isListOfCallbacks() shouldEqual false
         l.getP shouldEqual 10
         if (links.tail ne null) assertCompletedChain(links.tail)
       }
@@ -133,7 +141,7 @@ class CCASPromiseLinkingTest extends AbstractFPTest {
     assertCompletedChain(links)
   }
 
-  it should "produce incorrect behaviour by calling all callbacks although completing only one linked promise" in {
+  it should "produce correct behaviour by calling only the callbacks of the one linked promise which is completed" in {
     val counter = new AtomicInteger(0)
     val p = getFPPromiseLinking
     p.onComplete(_ => counter.incrementAndGet())
@@ -145,20 +153,20 @@ class CCASPromiseLinkingTest extends AbstractFPTest {
     p.tryCompleteWith(g)
 
     p.isListOfCallbacks() shouldEqual true
-    // Promise linking moves all callbacks to the root promise p.
-    p.getNumberOfCallbacks() shouldEqual 3
+    // In this solution the callbacks are not moved to p.
+    p.getNumberOfCallbacks() shouldEqual 1
     f.isLinkTo(p) shouldEqual true
     g.isLinkTo(p) shouldEqual true
 
     g.trySuccess(10)
 
     g.getP shouldEqual 10
-    // f is completed since it is a link to p. TODO Is this behavior correct?
-    f.getP shouldEqual 10
+    // f is not completed by this
+    f.isReadyC() shouldEqual false
     p.getP shouldEqual 10
 
-    // The callbacks of p, f and g are all called by the completion of g.
-    counter.get() shouldEqual 3
+    // only the callbacks of p and f are called
+    counter.get() shouldEqual 2
   }
 
   def getFPPromiseLinking: FPLinkingType = new FPLinkingType(executor)

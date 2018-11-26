@@ -6,7 +6,7 @@ import java.util.concurrent.locks.ReentrantLock
 import java.util.concurrent.{ExecutorService, Executors, ThreadFactory}
 
 import tdauth.futuresandpromises.core.FP
-import tdauth.futuresandpromises.core.cas.{CCAS, CCASOneCallbackAtATime, CCASPromiseLinking}
+import tdauth.futuresandpromises.core.cas.{CCAS, CCASFixedPromiseLinking, CCASOneCallbackAtATime, CCASPromiseLinking}
 import tdauth.futuresandpromises.core.mvar.CMVar
 import tdauth.futuresandpromises.core.stm.CSTM
 import tdauth.futuresandpromises.{Executor, JavaExecutor}
@@ -255,7 +255,8 @@ object Benchmarks extends App {
              t3: TestFunction,
              t4: TestFunction,
              t5: TestFunction,
-             t6: TestFunction): Unit = {
+             t6: TestFunction,
+             t7: TestFunction): Unit = {
     println("Twitter Util")
     runTest("twitterutil", testNumber, cores, t0)
     println("Scala FP")
@@ -270,6 +271,8 @@ object Benchmarks extends App {
     runTest("cas_one_callback_at_a_time", testNumber, cores, t5)
     println("Prim CAS Promise Linking")
     runTest("cas_promise_linking", testNumber, cores, t6)
+    println("Prim CAS Fixed Promise Linking")
+    runTest("cas_fixed_promise_linking", testNumber, cores, t7)
   }
 
   def test1(cores: Int) {
@@ -285,7 +288,8 @@ object Benchmarks extends App {
       () => perf1Prim(n, m, k, cores, ex => new CMVar(ex)),
       () => perf1Prim(n, m, k, cores, ex => new CSTM(ex)),
       () => perf1Prim(n, m, k, cores, ex => new CCASOneCallbackAtATime(ex)),
-      () => perf1Prim(n, m, k, cores, ex => new CCASPromiseLinking(ex))
+      () => perf1Prim(n, m, k, cores, ex => new CCASPromiseLinking(ex)),
+      () => perf1Prim(n, m, k, cores, ex => new CCASFixedPromiseLinking(ex))
     )
   }
 
@@ -302,7 +306,8 @@ object Benchmarks extends App {
       () => perf1Prim(n, m, k, cores, ex => new CMVar(ex)),
       () => perf1Prim(n, m, k, cores, ex => new CSTM(ex)),
       () => perf1Prim(n, m, k, cores, ex => new CCASOneCallbackAtATime(ex)),
-      () => perf1Prim(n, m, k, cores, ex => new CCASPromiseLinking(ex))
+      () => perf1Prim(n, m, k, cores, ex => new CCASPromiseLinking(ex)),
+      () => perf1Prim(n, m, k, cores, ex => new CCASFixedPromiseLinking(ex))
     )
   }
 
@@ -317,7 +322,8 @@ object Benchmarks extends App {
       () => perf2Prim(n, cores, ex => new CMVar(ex)),
       () => perf2Prim(n, cores, ex => new CSTM(ex)),
       () => perf2Prim(n, cores, ex => new CCASOneCallbackAtATime(ex)),
-      () => perf2Prim(n, cores, ex => new CCASPromiseLinking(ex))
+      () => perf2Prim(n, cores, ex => new CCASPromiseLinking(ex)),
+      () => perf2Prim(n, cores, ex => new CCASFixedPromiseLinking(ex))
     )
   }
 
@@ -332,7 +338,8 @@ object Benchmarks extends App {
       () => perf3Prim(n, cores, ex => new CMVar(ex)),
       () => perf3Prim(n, cores, ex => new CSTM(ex)),
       () => perf3Prim(n, cores, ex => new CCASOneCallbackAtATime(ex)),
-      () => perf3Prim(n, cores, ex => new CCASPromiseLinking(ex))
+      () => perf3Prim(n, cores, ex => new CCASPromiseLinking(ex)),
+      () => perf3Prim(n, cores, ex => new CCASFixedPromiseLinking(ex))
     )
   }
 
@@ -351,7 +358,8 @@ object Benchmarks extends App {
       () => perf4Prim(n, cores, ex => new CMVar(ex)),
       () => perf4Prim(n, cores, ex => new CSTM(ex)),
       () => perf4Prim(n, cores, ex => new CCASOneCallbackAtATime(ex)),
-      () => perf4Prim(n, cores, ex => new CCASPromiseLinking(ex))
+      () => perf4Prim(n, cores, ex => new CCASPromiseLinking(ex)),
+      () => perf4Prim(n, cores, ex => new CCASFixedPromiseLinking(ex))
     )
   }
 
