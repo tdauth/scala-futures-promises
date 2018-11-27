@@ -109,7 +109,7 @@ class CCASPromiseLinking[T](ex: Executor) extends AtomicReference[ValueType[T]](
   @inline @tailrec private def onComplete(c: CallbackEntry): Unit = {
     val s = get
     s match {
-      case ValueTypeTry(x)           => dispatchCallbacks(x, c)
+      case ValueTypeTry(x)           => dispatchCallbacksOneAtATime(x, c)
       case ValueTypeCallbackEntry(x) => if (!compareAndSet(s, ValueTypeCallbackEntry(appendCallbacks(x, c)))) onComplete(c)
       case ValueTypeLink(_)          => compressRoot().onComplete(c)
     }

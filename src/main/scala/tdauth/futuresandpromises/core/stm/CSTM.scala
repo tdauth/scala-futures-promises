@@ -39,7 +39,7 @@ class CSTM[T](ex: Executor) extends FP[T] {
         case Left(x) => false
         case Right(x) => {
           result() = Left(v)
-          dispatchCallbacks(v, x)
+          dispatchCallbacksOneAtATime(v, x)
           true
         }
       }

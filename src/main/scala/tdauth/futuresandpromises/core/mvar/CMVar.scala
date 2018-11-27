@@ -39,7 +39,7 @@ class CMVar[T](ex: Executor) extends SyncVar[FP[T]#Value] with FP[T] {
       case Right(x) => {
         put(Left(v))
         sig.put(())
-        dispatchCallbacks(v, x)
+        dispatchCallbacksOneAtATime(v, x)
         true
       }
     }

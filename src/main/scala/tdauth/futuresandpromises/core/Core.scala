@@ -69,6 +69,9 @@ trait Core[T] {
     }
   }
 
+  /**
+    * Dispatches each callback separately to the executor.
+    */
   // TODO #32 @tailrec
   // TODO #32 How to do pattern matching with keeping the generic types T?
   protected final def dispatchCallbacksOneAtATime(v: Try[T], callbacks: CallbackEntry): Unit = if (callbacks ne Noop) {

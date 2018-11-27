@@ -39,7 +39,7 @@ class CCAS[T](ex: Executor) extends AtomicReference[FP[T]#Value](Right(Noop)) wi
       case Left(_) => false
       case Right(x) => {
         if (compareAndSet(s, Left(v))) {
-          dispatchCallbacks(v, x)
+          dispatchCallbacksOneAtATime(v, x)
           true
         } else {
           tryCompleteInternal(v)
