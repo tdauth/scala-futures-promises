@@ -2,10 +2,9 @@ package tdauth.futuresandpromises.nonderived
 
 import java.util.concurrent.Executors
 
-import scala.concurrent.ExecutionContext
+import tdauth.futuresandpromises.{AbstractFutureTest, Promise}
 
-import tdauth.futuresandpromises.AbstractFutureTest
-import tdauth.futuresandpromises.Promise
+import scala.concurrent.ExecutionContext
 
 class FutureTest extends AbstractFutureTest {
   override def getTestName: String = "NonDerivedFuture"

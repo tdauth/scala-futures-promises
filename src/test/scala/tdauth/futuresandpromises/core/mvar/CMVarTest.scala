@@ -2,8 +2,8 @@ package tdauth.futuresandpromises.core.mvar
 
 import java.util.concurrent.Executors
 
-import tdauth.futuresandpromises.{AbstractFPTest, JavaExecutor}
 import tdauth.futuresandpromises.core.FP
+import tdauth.futuresandpromises.{AbstractFPTest, JavaExecutor}
 
 class CMVarTest extends AbstractFPTest {
   override def getTestName: String = "CMVarTest"

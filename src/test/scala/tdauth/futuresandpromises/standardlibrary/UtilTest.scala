@@ -2,12 +2,9 @@ package tdauth.futuresandpromises.standardlibrary
 
 import java.util.concurrent.Executors
 
-import scala.concurrent.ExecutionContext
+import tdauth.futuresandpromises.{AbstractUtilTest, Executor, Promise, Util}
 
-import tdauth.futuresandpromises.AbstractUtilTest
-import tdauth.futuresandpromises.Executor
-import tdauth.futuresandpromises.Promise
-import tdauth.futuresandpromises.Util
+import scala.concurrent.ExecutionContext
 
 class UtilTest extends AbstractUtilTest {
   override def getTestName: String = "ScalaFPUtil"

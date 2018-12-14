@@ -2,10 +2,9 @@ package tdauth.futuresandpromises.standardlibrary
 
 import java.util.concurrent.Executors
 
-import scala.concurrent.ExecutionContext
+import tdauth.futuresandpromises.{AbstractPromiseTest, Promise}
 
-import tdauth.futuresandpromises.AbstractPromiseTest
-import tdauth.futuresandpromises.Promise
+import scala.concurrent.ExecutionContext
 
 class PromiseTest extends AbstractPromiseTest {
   override def getTestName: String = "ScalaFPPromise"

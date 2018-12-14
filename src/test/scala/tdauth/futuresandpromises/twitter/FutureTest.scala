@@ -2,10 +2,8 @@ package tdauth.futuresandpromises.twitter
 
 import java.util.concurrent.Executors
 
-import tdauth.futuresandpromises.AbstractFutureTest
-import tdauth.futuresandpromises.Promise
-import tdauth.futuresandpromises.JavaExecutor
 import com.twitter.util.FuturePool
+import tdauth.futuresandpromises.{AbstractFutureTest, Promise}
 
 class FutureTest extends AbstractFutureTest {
   override def getTestName: String = "TwitterFuture"

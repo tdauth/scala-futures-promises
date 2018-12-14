@@ -77,7 +77,7 @@ object Benchmarks extends App {
   def runTest2ScalaFP: Unit = runTestForCores("Test 2", cores => runTestScalaFP(2, cores, () => perf1ScalaFP(TEST_2_N, TEST_2_M, TEST_2_K, cores)))
   def runTest3ScalaFP: Unit = runTestForCores("Test 3", cores => runTestScalaFP(3, cores, () => perf2ScalaFP(TEST_3_N, cores)))
   def runTest4ScalaFP: Unit = runTestForCores("Test 4", cores => runTestScalaFP(4, cores, () => perf3ScalaFP(TEST_4_N, cores)))
-  def runTest5ScalaFP: Unit = runTestForCores("Test 5", cores => runTestScalaFP(5, cores, () => perf3ScalaFP(TEST_5_N, cores)))
+  def runTest5ScalaFP: Unit = runTestForCores("Test 5", cores => runTestScalaFP(5, cores, () => perf4ScalaFP(TEST_5_N, cores)))
   def runAllTestsScalaFP {
     runTest1ScalaFP
     runTest2ScalaFP
